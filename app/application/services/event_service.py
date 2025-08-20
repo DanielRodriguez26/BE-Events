@@ -1,8 +1,9 @@
 import uuid
 from typing import List
+
+from app.application.dtos.event_dto import CreateEventDTO, EventDTO, UpdateEventDTO
 from app.domain.entities.events import Event
 from app.domain.repositories.events_repository import IEventsRepository
-from app.application.dtos.envet_dto import EventDTO
 
 
 class EventService:
@@ -11,23 +12,25 @@ class EventService:
 
     def get_all_events(self) -> List[EventDTO]:
         events = self._repository.get_all_events()
-        return [EventDTO.from_orm(event) for event in events]
+        return [EventDTO.model_validate(event) for event in events]
 
     def get_event_by_id(self, event_id: uuid.UUID) -> EventDTO:
         event = self._repository.get_event_by_id(event_id)
         if not event:
             raise ValueError("Event not found")
-        return EventDTO.from_orm(event)
+        return EventDTO.model_validate(event)
 
-    def create_event(self, event_dto: EventDTO) -> EventDTO:
-        event = Event(**event_dto.dict())
+    def create_event(self, event_dto: CreateEventDTO) -> EventDTO:
+        event_data = event_dto.model_dump()
+        event = Event(**event_data)
         created_event = self._repository.create_event(event)
-        return EventDTO.from_orm(created_event)
+        return EventDTO.model_validate(created_event)
 
-    def update_event(self, event_dto: EventDTO) -> EventDTO:
-        event = Event(**event_dto.dict())
+    def update_event(self, event_dto: UpdateEventDTO) -> EventDTO:
+        event_data = event_dto.model_dump(exclude_unset=True)
+        event = Event(**event_data)
         updated_event = self._repository.update_event(event)
-        return EventDTO.from_orm(updated_event)
+        return EventDTO.model_validate(updated_event)
 
     def delete_event(self, event_id: uuid.UUID) -> None:
         self._repository.delete_event(event_id)

@@ -5,6 +5,7 @@ API REST para gestionar eventos usando FastAPI y Clean Architecture.
 ## 🚀 Instalación Rápida
 
 ### 1. Clonar y configurar
+
 ```bash
 git clone <tu-repositorio>
 cd backend
@@ -15,6 +16,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configurar base de datos
+
 ```bash
 # Crear archivo .env
 cp env.example .env
@@ -25,6 +27,7 @@ createdb mis_eventos
 ```
 
 ### 3. Ejecutar
+
 ```bash
 uvicorn app.main:app --reload
 ```
@@ -33,13 +36,13 @@ Accede a: http://localhost:8000/docs
 
 ## 📡 Endpoints Disponibles
 
-| Método | URL | Descripción |
-|--------|-----|-------------|
-| GET | `/events/` | Listar todos los eventos |
-| GET | `/events/{id}` | Obtener evento por ID |
-| POST | `/events/` | Crear nuevo evento |
-| PUT | `/events/{id}` | Actualizar evento |
-| DELETE | `/events/{id}` | Eliminar evento |
+| Método | URL            | Descripción              |
+| ------ | -------------- | ------------------------ |
+| GET    | `/events/`     | Listar todos los eventos |
+| GET    | `/events/{id}` | Obtener evento por ID    |
+| POST   | `/events/`     | Crear nuevo evento       |
+| PUT    | `/events/{id}` | Actualizar evento        |
+| DELETE | `/events/{id}` | Eliminar evento          |
 
 ## 🏗️ Estructura del Proyecto
 
@@ -67,6 +70,7 @@ mypy app/
 ## 🗄️ Base de Datos y Migraciones (Alembic)
 
 ### Configuración Inicial
+
 ```bash
 # Instalar Alembic (si no está en requirements.txt)
 pip install alembic
@@ -81,6 +85,7 @@ alembic init alembic
 ### Comandos de Migración
 
 #### Crear una nueva migración
+
 ```bash
 # Migración automática (detecta cambios en modelos)
 python -m alembic revision --autogenerate -m "Descripción de los cambios"
@@ -90,6 +95,7 @@ python -m alembic revision -m "Descripción de los cambios"
 ```
 
 #### Aplicar migraciones
+
 ```bash
 # Aplicar todas las migraciones pendientes
 python -m alembic upgrade head
@@ -102,6 +108,7 @@ python -m alembic upgrade +1
 ```
 
 #### Revertir migraciones
+
 ```bash
 # Revertir la última migración
 python -m alembic downgrade -1
@@ -114,6 +121,7 @@ python -m alembic downgrade base
 ```
 
 #### Información y estado
+
 ```bash
 # Ver migración actual
 python -m alembic current
@@ -144,6 +152,7 @@ python -m alembic diff <revision_id>
 ### Ejemplos Prácticos
 
 #### Agregar una nueva columna
+
 ```python
 # 1. Modificar el modelo
 class EventesModel(Base):
@@ -160,6 +169,7 @@ python -m alembic upgrade head
 ```
 
 #### Crear una nueva tabla
+
 ```python
 # 1. Crear nuevo modelo
 class UserModel(Base):
@@ -180,20 +190,24 @@ python -m alembic upgrade head
 ### Solución de Problemas
 
 #### Error: "No module named 'app'"
+
 - Verificar que el directorio raíz esté en `sys.path` en `alembic/env.py`
 - Asegurar que existan archivos `__init__.py` en todos los directorios
 
 #### Error: "Table already exists"
+
 - Verificar el estado actual: `python -m alembic current`
 - Si es necesario, marcar como aplicada: `python -m alembic stamp head`
 
 #### Error: "Can't locate revision identified by"
+
 - Verificar el historial: `python -m alembic history`
 - Limpiar archivos de migración no aplicados si es necesario
 
 ## 📝 Ejemplo de Uso
 
 ### Crear un evento
+
 ```bash
 curl -X POST "http://localhost:8000/events/" \
   -H "Content-Type: application/json" \
@@ -206,6 +220,7 @@ curl -X POST "http://localhost:8000/events/" \
 ```
 
 ### Obtener eventos
+
 ```bash
 curl "http://localhost:8000/events/"
 ```
