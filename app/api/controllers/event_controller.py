@@ -25,4 +25,9 @@ def get_event_service() -> EventService:
 
 @router.get("/",response_model=List[EventDTO], status_code=status.HTTP_200_OK)
 def get_all_events(service: EventService = Depends(get_event_service)):
+    # Obtiene todos los eventos
     return service.get_all_events()
+
+def cerate_event(event: EventDTO, service: EventService = Depends(get_event_service)):
+    # Crea un nuevo evento.
+    return service.create_event(event)
