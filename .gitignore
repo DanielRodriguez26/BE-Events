@@ -37,4 +37,4 @@ staticfiles
 rooms/jsons/rooms_data.json
 static/video/*
 !static/video/index.html
-
+.vscode
