@@ -1,0 +1,152 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🚀 Iniciar FastAPI",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "-m",
+                "uvicorn",
+                "app.main:app",
+                "--reload",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "🧪 Ejecutar Tests",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "-m",
+                "pytest",
+                "tests/",
+                "-v"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "📊 Aplicar Migraciones",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "-m",
+                "alembic",
+                "upgrade",
+                "head"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "🔧 Formatear Código",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "-m",
+                "black",
+                "app/",
+                "tests/"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "📋 Verificar Tipos",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "-m",
+                "mypy",
+                "app/"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "🧪 Probar API",
+            "type": "shell",
+            "command": "${workspaceFolder}/env/Scripts/python.exe",
+            "args": [
+                "test_api.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}

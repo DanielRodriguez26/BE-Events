@@ -1,0 +1,19 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.pylance",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.mypy-type-checker",
+        "ms-python.pytest-adapter",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-docker",
+        "ms-azuretools.vscode-docker",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-js-debug",
+        "ms-vscode.vscode-js-debug-companion"
+    ]
+}

@@ -1,36 +1,41 @@
-import os
-import sys
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api.endpoints import events
+from app.db.base import engine
+from app.db.models import Base
 
-# Agregar el directorio raíz al path para imports relativos
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
-try:
-    from app.api.api import register_routes
-except ImportError:
-    # Fallback para cuando se ejecuta como script
-    from api.api import register_routes
-
+# Create FastAPI app
 app = FastAPI(
-    title="Mis Eventos API",
-    description="API REST para gestionar eventos usando FastAPI y Clean Architecture",
-    version="1.0.0",
+    title=settings.project_name,
+    debug=settings.debug,
+    openapi_url=f"{settings.api_v1_str}/openapi.json"
 )
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure this properly for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(events.router, prefix=f"{settings.api_v1_str}/events", tags=["events"])
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"message": "Welcome to Events API", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health_check():
-    """Endpoint de verificación de salud de la API."""
-    return {
-        "status": "healthy",
-        "message": "Mis Eventos API está funcionando correctamente",
-    }
+    """Health check endpoint."""
+    return {"status": "healthy"}
 
-
-register_routes(app)
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

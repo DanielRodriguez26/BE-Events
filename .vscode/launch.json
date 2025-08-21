@@ -1,0 +1,76 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🚀 FastAPI - Desarrollo",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--reload",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "ENVIRONMENT": "development"
+            },
+            "justMyCode": false,
+            "python": "${workspaceFolder}/env/Scripts/python.exe"
+        },
+        {
+            "name": "🧪 Ejecutar Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "ENVIRONMENT": "test"
+            },
+            "justMyCode": false,
+            "python": "${workspaceFolder}/env/Scripts/python.exe"
+        },
+        {
+            "name": "📊 Alembic - Migración",
+            "type": "python",
+            "request": "launch",
+            "module": "alembic",
+            "args": [
+                "upgrade",
+                "head"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": false,
+            "python": "${workspaceFolder}/env/Scripts/python.exe"
+        },
+        {
+            "name": "🔍 Debug Script Actual",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": false,
+            "python": "${workspaceFolder}/env/Scripts/python.exe"
+        }
+    ]
+}

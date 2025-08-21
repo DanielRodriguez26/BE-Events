@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 ${imports if imports else ""}
 
-# identificadores de revisión, utilizados por Alembic.
+# revision identifiers, used by Alembic.
 revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 branch_labels = ${repr(branch_labels)}
@@ -22,3 +22,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     ${downgrades if downgrades else "pass"}
+

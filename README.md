@@ -1,243 +1,135 @@
-# 🎉 Mis Eventos - Backend API
+# Events API
 
-API REST para gestionar eventos usando FastAPI y Clean Architecture.
+Una aplicación FastAPI para la gestión de eventos.
 
-## 🚀 Instalación Rápida
+## Características
 
-### 1. Clonar y configurar
+- ✅ FastAPI con Python 3.12
+- ✅ SQLAlchemy + SQLModel para ORM
+- ✅ PostgreSQL como base de datos
+- ✅ Poetry para gestión de dependencias
+- ✅ Alembic para migraciones
+- ✅ Tests unitarios con pytest
+- ✅ Documentación automática con Swagger/OpenAPI
 
-```bash
-git clone <tu-repositorio>
-cd backend
-python -m venv env
-env\Scripts\activate  # Windows
-# source env/bin/activate  # Linux/Mac
-pip install -r requirements.txt
-```
-
-### 2. Configurar base de datos
-
-```bash
-# Crear archivo .env
-cp env.example .env
-# Editar .env con tus datos de base de datos
-
-# Crear base de datos PostgreSQL
-createdb mis_eventos
-```
-
-### 3. Ejecutar
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Accede a: http://localhost:8000/docs
-
-## 📡 Endpoints Disponibles
-
-| Método | URL            | Descripción              |
-| ------ | -------------- | ------------------------ |
-| GET    | `/events/`     | Listar todos los eventos |
-| GET    | `/events/{id}` | Obtener evento por ID    |
-| POST   | `/events/`     | Crear nuevo evento       |
-| PUT    | `/events/{id}` | Actualizar evento        |
-| DELETE | `/events/{id}` | Eliminar evento          |
-
-## 🏗️ Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 app/
-├── api/              # Controladores HTTP
-├── application/      # Lógica de negocio
-├── domain/          # Entidades y reglas
-└── infrastructure/  # Base de datos
+│   ├── api/
+│   │   ├── endpoints/         # Endpoints/rutas (events.py, auth.py)
+│   │   └── schemas.py         # Modelos Pydantic para validación
+│   ├── core/
+│   │   ├── config.py          # Variables de entorno
+│   │   └── security.py        # Lógica de contraseñas y JWT
+│   ├── crud/
+│   │   └── crud_event.py      # Operaciones CRUD
+│   ├── db/
+│   │   ├── base.py            # Configuración de SQLAlchemy
+│   │   └── models.py          # Modelos de base de datos
+│   ├── services/
+│   │   └── event_service.py   # Lógica de negocio
+│   └── main.py                # Punto de entrada
+├── tests/                     # Pruebas unitarias
+├── alembic/                   # Migraciones
+└── pyproject.toml            # Dependencias
 ```
 
-## 🛠️ Comandos Útiles
+## Instalación
 
-```bash
-# Ejecutar tests
-pytest
-
-# Formatear código
-black app/
-
-# Verificar tipos
-mypy app/
-```
-
-## 🗄️ Base de Datos y Migraciones (Alembic)
-
-### Configuración Inicial
-
-```bash
-# Instalar Alembic (si no está en requirements.txt)
-pip install alembic
-
-# Inicializar Alembic (solo la primera vez)
-alembic init alembic
-
-# Configurar la URL de la base de datos en alembic.ini
-# sqlalchemy.url = postgresql://usuario:password@localhost:5432/nombre_db
-```
-
-### Comandos de Migración
-
-#### Crear una nueva migración
-
-```bash
-# Migración automática (detecta cambios en modelos)
-python -m alembic revision --autogenerate -m "Descripción de los cambios"
-
-# Migración manual (sin detectar cambios)
-python -m alembic revision -m "Descripción de los cambios"
-```
-
-#### Aplicar migraciones
-
-```bash
-# Aplicar todas las migraciones pendientes
-python -m alembic upgrade head
-
-# Aplicar hasta una migración específica
-python -m alembic upgrade <revision_id>
-
-# Aplicar solo la siguiente migración
-python -m alembic upgrade +1
-```
-
-#### Revertir migraciones
-
-```bash
-# Revertir la última migración
-python -m alembic downgrade -1
-
-# Revertir hasta una migración específica
-python -m alembic downgrade <revision_id>
-
-# Revertir todas las migraciones
-python -m alembic downgrade base
-```
-
-#### Información y estado
-
-```bash
-# Ver migración actual
-python -m alembic current
-
-# Ver historial de migraciones
-python -m alembic history
-
-# Ver migraciones pendientes
-python -m alembic show <revision_id>
-
-# Ver diferencias entre migraciones
-python -m alembic diff <revision_id>
-```
-
-### Flujo de Trabajo Típico
-
-1. **Modificar el modelo** en `app/infrastructure/database/model/`
-2. **Crear migración automática**:
+1. **Clonar el repositorio**
    ```bash
-   python -m alembic revision --autogenerate -m "Agregar campo nuevo"
-   ```
-3. **Revisar la migración generada** en `alembic/versions/`
-4. **Aplicar la migración**:
-   ```bash
-   python -m alembic upgrade head
+   git clone <repository-url>
+   cd BE-Event
    ```
 
-### Ejemplos Prácticos
+2. **Instalar Poetry** (si no lo tienes)
+   ```bash
+   pip install poetry
+   ```
 
-#### Agregar una nueva columna
+3. **Instalar dependencias**
+   ```bash
+   poetry install
+   ```
 
-```python
-# 1. Modificar el modelo
-class EventesModel(Base):
-    # ... columnas existentes ...
-    capacity = Column(Integer, nullable=True)  # Nueva columna
-```
+4. **Configurar variables de entorno**
+   ```bash
+   cp env.example .env
+   # Editar .env con tus configuraciones
+   ```
 
-```bash
-# 2. Crear migración
-python -m alembic revision --autogenerate -m "Agregar capacidad al evento"
+5. **Configurar base de datos PostgreSQL**
+   - Crear base de datos: `events_db`
+   - Actualizar `DATABASE_URL` en `.env`
 
-# 3. Aplicar migración
-python -m alembic upgrade head
-```
+6. **Ejecutar migraciones**
+   ```bash
+   poetry run alembic upgrade head
+   ```
 
-#### Crear una nueva tabla
+## Uso
 
-```python
-# 1. Crear nuevo modelo
-class UserModel(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False)
-    name = Column(String(255), nullable=False)
-```
-
-```bash
-# 2. Crear migración
-python -m alembic revision --autogenerate -m "Crear tabla usuarios"
-
-# 3. Aplicar migración
-python -m alembic upgrade head
-```
-
-### Solución de Problemas
-
-#### Error: "No module named 'app'"
-
-- Verificar que el directorio raíz esté en `sys.path` en `alembic/env.py`
-- Asegurar que existan archivos `__init__.py` en todos los directorios
-
-#### Error: "Table already exists"
-
-- Verificar el estado actual: `python -m alembic current`
-- Si es necesario, marcar como aplicada: `python -m alembic stamp head`
-
-#### Error: "Can't locate revision identified by"
-
-- Verificar el historial: `python -m alembic history`
-- Limpiar archivos de migración no aplicados si es necesario
-
-## 📝 Ejemplo de Uso
-
-### Crear un evento
+### Ejecutar la aplicación
 
 ```bash
-curl -X POST "http://localhost:8000/events/" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Mi Evento",
-    "description": "Descripción del evento",
-    "date": "2024-01-15",
-    "location": "Madrid"
-  }'
+poetry run uvicorn app.main:app --reload
 ```
 
-### Obtener eventos
+La aplicación estará disponible en: http://localhost:8000
+
+### Documentación de la API
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Endpoints disponibles
+
+- `GET /` - Página principal
+- `GET /health` - Health check
+- `GET /api/v1/events/` - Obtener todos los eventos
+- `GET /api/v1/events/{event_id}` - Obtener evento por ID
+
+## Desarrollo
+
+### Ejecutar tests
 
 ```bash
-curl "http://localhost:8000/events/"
+poetry run pytest
 ```
 
-## 🔧 Tecnologías
+### Crear nueva migración
 
-- **FastAPI** - Framework web
-- **PostgreSQL** - Base de datos
-- **SQLAlchemy** - ORM
-- **Pydantic** - Validación de datos
-- **Alembic** - Migraciones
+```bash
+poetry run alembic revision --autogenerate -m "Description"
+poetry run alembic upgrade head
+```
 
-## 📞 Contacto
+### Formatear código
 
-- **Desarrollador**: [Tu Nombre]
-- **Email**: [tu-email@ejemplo.com]
+```bash
+poetry run black .
+```
 
----
+## Tecnologías utilizadas
 
-⭐ Si te gusta el proyecto, ¡dale una estrella!
+- **FastAPI**: Framework web moderno y rápido
+- **SQLAlchemy**: ORM para Python
+- **PostgreSQL**: Base de datos relacional
+- **Poetry**: Gestión de dependencias
+- **Alembic**: Migraciones de base de datos
+- **Pytest**: Framework de testing
+- **Pydantic**: Validación de datos
+
+## Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+
