@@ -1,9 +1,10 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.schemas import Event, EventCreate
+from app.api.schemas.event_schemas import Event, EventCreate, EventUpdate
 from app.db.base import get_db
 from app.services.event_service import EventService
 
@@ -26,6 +27,46 @@ async def get_all_events(
     """
     try:
         events = EventService.get_all_events(db, skip=skip, limit=limit)
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get(
+    "/search", response_model=List[Event], summary="Search events by multiple criteria"
+)
+async def search_events(
+    title: Optional[str] = Query(None, description="Search by title or part of title"),
+    location: Optional[str] = Query(None, description="Search by location or part of location"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    date_from: Optional[datetime] = Query(None, description="Start of date range (ISO format)"),
+    date_to: Optional[datetime] = Query(None, description="End of date range (ISO format)" ),
+    skip: int = Query(0, ge=0, description="Number of events to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of events to return"),
+    db: Session = Depends(get_db),
+):
+    """
+    Search events by multiple criteria:
+
+    - **title**: Search by title or part of title (case insensitive)
+    - **location**: Search by location or part of location (case insensitive)
+    - **is_active**: Filter by active status (true/false)
+    - **date_from**: Start of date range (events that occur from this date)
+    - **date_to**: End of date range (events that occur until this date)
+    - **skip**: Number of events to skip (for pagination)
+    - **limit**: Maximum number of events to return (max 1000)
+    """
+    try:
+        events = EventService.search_events(
+            db,
+            title,
+            location,
+            is_active,
+            date_from,
+            date_to,
+            skip,
+            limit,
+        )
         return events
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
@@ -63,3 +104,28 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.put("/{event_id}", response_model=Event, summary="Update event by ID")
+async def update_event(
+    event_id: int, event: EventUpdate, db: Session = Depends(get_db)
+):
+    try:
+        updated_event = EventService.update_event(db, event_id, event)
+        return updated_event
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.delete("/{event_id}", response_model=Event, summary="Delete event by ID")
+async def delete_event(event_id: int, db: Session = Depends(get_db)):
+    try:
+        deleted_event = EventService.delete_event(db, event_id)
+        return deleted_event
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
