@@ -4,8 +4,11 @@ from app.domain.entities.events import Event
 from app.domain.repositories.events_repository import IEventsRepository
 
 class InMemoryEventsRepository(IEventsRepository):
+    _shared_events: List[Event] = []
+
     def __init__(self):
-        self._events: List[Event] = []
+        # Compartir almacenamiento entre instancias para que los endpoints vean el mismo estado
+        self._events: List[Event] = InMemoryEventsRepository._shared_events
 
     def get_all_events(self) -> List[Event]:
         return self._events
