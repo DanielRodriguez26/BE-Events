@@ -26,10 +26,11 @@ cp env.example .env
 createdb mis_eventos
 ```
 
-### 3. Ejecutar
+### 3. Ejecutar (Poetry)
 
 ```bash
-uvicorn app.main:app --reload
+poetry install
+poetry run uvicorn app.main:app --reload
 ```
 
 Accede a: http://localhost:8000/docs
@@ -212,10 +213,11 @@ python -m alembic upgrade head
 curl -X POST "http://localhost:8000/events/" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Mi Evento",
+    "title": "Mi Evento",
     "description": "Descripción del evento",
-    "date": "2024-01-15",
-    "location": "Madrid"
+    "date": "2024-01-15T00:00:00Z",
+    "location": "Madrid",
+    "is_active": true
   }'
 ```
 

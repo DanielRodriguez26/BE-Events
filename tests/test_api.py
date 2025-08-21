@@ -1,79 +1,46 @@
 #!/usr/bin/env python3
-"""
-Script de prueba para verificar que la API funciona correctamente.
-"""
-import requests
-import json
 from datetime import datetime, timezone
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+client = TestClient(app)
+
 
 def test_health_endpoint():
-    """Prueba el endpoint de health check."""
-    try:
-        response = requests.get("http://localhost:8000/health")
-        print(f"✅ Health Check: {response.status_code}")
-        print(f"   Response: {response.json()}")
-        return response.status_code == 200
-    except requests.exceptions.ConnectionError:
-        print("❌ No se puede conectar al servidor. Asegúrate de que esté ejecutándose.")
-        return False
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
 
-def test_get_events():
-    """Prueba el endpoint GET /events/."""
-    try:
-        response = requests.get("http://localhost:8000/events/")
-        print(f"✅ GET /events/: {response.status_code}")
-        print(f"   Response: {response.json()}")
-        return response.status_code == 200
-    except requests.exceptions.ConnectionError:
-        print("❌ No se puede conectar al servidor.")
-        return False
 
-def test_create_event():
-    """Prueba el endpoint POST /events/."""
-    try:
-        event_data = {
-            "title": "Evento de Prueba",
-            "description": "Este es un evento de prueba para verificar la API",
-            "date": datetime.now(timezone.utc).isoformat(),
-            "location": "Madrid, España",
-            "is_active": True
-        }
-        
-        response = requests.post(
-            "http://localhost:8000/events/",
-            json=event_data,
-            headers={"Content-Type": "application/json"}
-        )
-        print(f"✅ POST /events/: {response.status_code}")
-        print(f"   Response: {response.json()}")
-        return response.status_code == 201
-    except requests.exceptions.ConnectionError:
-        print("❌ No se puede conectar al servidor.")
-        return False
+def test_get_events_starts_empty():
+    response = client.get("/events/")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
 
-def main():
-    """Ejecuta todas las pruebas."""
-    print("🧪 Iniciando pruebas de la API...")
-    print("=" * 50)
-    
-    # Verificar que el servidor esté ejecutándose
-    if not test_health_endpoint():
-        print("\n❌ El servidor no está ejecutándose.")
-        print("   Ejecuta: python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000")
-        return
-    
-    print("\n" + "=" * 50)
-    
-    # Probar endpoints
-    test_get_events()
-    test_create_event()
-    
-    print("\n" + "=" * 50)
-    print("🎉 Pruebas completadas!")
-    print("\n📋 Endpoints disponibles:")
-    print("   - Health Check: http://localhost:8000/health")
-    print("   - API Docs: http://localhost:8000/docs")
-    print("   - Events: http://localhost:8000/events/")
 
-if __name__ == "__main__":
-    main()
+def test_create_and_get_event():
+    payload = {
+        "title": "Evento de Prueba",
+        "description": "Este es un evento de prueba",
+        "date": datetime.now(timezone.utc).isoformat(),
+        "location": "Madrid",
+        "is_active": True,
+    }
+    created = client.post("/events/", json=payload)
+    assert created.status_code == 201
+    data = created.json()
+    assert data["title"] == payload["title"]
+    event_id = data["id"]
+
+    fetched = client.get(f"/events/{event_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["id"] == event_id
+
+    updated = client.put(f"/events/{event_id}", json={"title": "Actualizado"})
+    assert updated.status_code == 200
+    assert updated.json()["title"] == "Actualizado"
+
+    deleted = client.delete(f"/events/{event_id}")
+    assert deleted.status_code == 204

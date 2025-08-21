@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "be-events"
+version = "0.1.0"
+description = "API de eventos con FastAPI, SQLModel, PostgreSQL y Alembic"
+authors = ["Tu Nombre <tu-email@ejemplo.com>"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+fastapi = "^0.104.1"
+uvicorn = { version = "^0.24.0", extras = ["standard"] }
+sqlalchemy = "^2.0.23"
+sqlmodel = "^0.0.22"
+alembic = "^1.12.1"
+psycopg2-binary = "^2.9.9"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+email-validator = "^2.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+httpx = "^0.25.2"
+black = "^24.4.2"
+mypy = "^1.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

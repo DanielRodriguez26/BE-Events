@@ -1,16 +1,33 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
-from sqlalchemy.sql import func
-from app.infrastructure.database.base import Base
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from sqlmodel import SQLModel, Field
+from sqlalchemy import func
+from sqlalchemy import DateTime as SADateTime
 
 
-class EventesModel(Base):
-    __tablename__ = "eventes"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    date = Column(DateTime, nullable=False)
-    location = Column(String(255), nullable=True)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+class EventModel(SQLModel, table=True):
+    __tablename__ = "events"
+
+    id: uuid.UUID = Field(
+        default_factory=uuid.uuid4,
+        primary_key=True,
+        index=True,
+    )
+    title: str = Field(max_length=255, nullable=False)
+    description: Optional[str] = Field(default=None)
+    date: datetime = Field(nullable=False, sa_type=SADateTime(timezone=True))
+    location: Optional[str] = Field(default=None, max_length=255)
+    is_active: bool = Field(default=True, nullable=False)
+    created_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=SADateTime(timezone=True),
+        sa_column_kwargs={"server_default": func.now()},
+    )
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=SADateTime(timezone=True),
+        sa_column_kwargs={"onupdate": func.now()},
+    )
+

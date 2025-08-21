@@ -5,18 +5,20 @@ from fastapi import APIRouter, Depends, status, HTTPException
 
 from app.application.dtos.event_dto import CreateEventDTO, EventDTO, UpdateEventDTO
 from app.application.services.event_service import EventService
-from app.infrastructure.repositories.in_memory_event_repository import (
-    InMemoryEventsRepository,
-)
+import os
+from app.infrastructure.repositories.in_memory_event_repository import InMemoryEventsRepository
+from app.infrastructure.repositories.sqlalchemy_event_repository import SQLAlchemyEventsRepository
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
 
 # --- Dependencia para inyectar el servicio ---
 def get_event_service() -> EventService:
-    # Aquí es donde la "magia" de la inyección de dependencias sucede.
-    # Se crea una instancia del repositorio y se pasa al servicio
-    repository = InMemoryEventsRepository()
+    backend = os.getenv("REPO_BACKEND", "memory").lower()
+    if backend == "sql":
+        repository = SQLAlchemyEventsRepository()
+    else:
+        repository = InMemoryEventsRepository()
     return EventService(repository)
 
 
