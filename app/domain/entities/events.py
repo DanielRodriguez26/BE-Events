@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class Event(BaseModel):
-    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, alias="_id")
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4)
     title: str = Field(
         ..., min_length=1, max_length=255, description="Título del evento"
     )
