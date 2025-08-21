@@ -5,20 +5,20 @@ from sqlalchemy.sql import func
 from app.db.base import Base
 
 
-class Event(Base):
-    __tablename__ = "events"
+class Session(Base):
+    __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    location = Column(String(255), nullable=False)
-    start_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
-    capacity = Column(Integer, nullable=False, default=0)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    speaker_id = Column(Integer, ForeignKey("speakers.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    registrations = relationship("EventRegistration", back_populates="event")
-    sessions = relationship("Session", back_populates="event")
+    event = relationship("Event", back_populates="sessions")
+    speaker = relationship("Speaker", back_populates="sessions")

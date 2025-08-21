@@ -1,7 +1,9 @@
-
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey 
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db.base import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -17,3 +19,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
+
+    # Relationships
+    role = relationship("Role", back_populates="users")
+    registrations = relationship("EventRegistration", back_populates="user")

@@ -14,7 +14,7 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    pass
+    id: Optional[int] = None
 
 
 class EventUpdate(BaseModel):

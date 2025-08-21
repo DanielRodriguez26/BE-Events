@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Testing
+  postgres_test:
+    image: postgres:15-alpine
+    container_name: be_events_postgres_test
+    environment:
+      POSTGRES_DB: events_test_db
+      POSTGRES_USER: events_user
+      POSTGRES_PASSWORD: events_password
+    ports:
+      - "5433:5432"
+    networks:
+      - events_test_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U events_user -d events_test_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Testing
+  redis_test:
+    image: redis:7-alpine
+    container_name: be_events_redis_test
+    ports:
+      - "6380:6379"
+    networks:
+      - events_test_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test Runner
+  test:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: be_events_test
+    environment:
+      - DATABASE_URL=postgresql://events_user:events_password@postgres_test:5432/events_test_db
+      - REDIS_URL=redis://redis_test:6379
+      - SECRET_KEY=test-secret-key
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - ALGORITHM=HS256
+      - ENVIRONMENT=testing
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/.pytest_cache
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    networks:
+      - events_test_network
+    command: ["pytest", "tests/", "-v", "--cov=app", "--cov-report=html", "--cov-report=term"]
+
+networks:
+  events_test_network:
+    driver: bridge

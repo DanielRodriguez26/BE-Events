@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.endpoints import events
 from app.core.config import settings
 from app.db.base import Base, engine
 
 # Import all models to ensure they are registered
 from app.db.models import *
+from app.routes.api import api_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -27,10 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(
-    events.router, prefix=f"{settings.api_v1_str}/events", tags=["events"]
-)
+# Include API routes
+app.include_router(api_router, prefix=settings.api_v1_str)
 
 
 @app.get("/")

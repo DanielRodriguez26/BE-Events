@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: be_events_postgres_dev
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-events_db_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-events_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-events_password}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - events_dev_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-events_user} -d ${POSTGRES_DB:-events_db_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Development
+  redis:
+    image: redis:7-alpine
+    container_name: be_events_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - events_dev_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Application for Development
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: be_events_app_dev
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-events_user}:${POSTGRES_PASSWORD:-events_password}@postgres:5432/${POSTGRES_DB:-events_db_dev}
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # Debug port
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/.pytest_cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - events_dev_network
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app"]
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  events_dev_network:
+    driver: bridge

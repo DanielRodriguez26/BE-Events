@@ -26,23 +26,30 @@ async def get_all_events(
     - **limit**: Maximum number of events to return (max 1000)
     """
     try:
-        events = EventService.get_all_events(db, skip=skip, limit=limit)
+        event_service = EventService(db)
+        events = event_service.get_all_events(skip=skip, limit=limit)
         return events
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.get(
-    "/search", response_model=List[Event], summary="Search events by multiple criteria"
-)
+@router.get("/search", response_model=List[Event], summary="Search events by multiple criteria")
 async def search_events(
     title: Optional[str] = Query(None, description="Search by title or part of title"),
-    location: Optional[str] = Query(None, description="Search by location or part of location"),
+    location: Optional[str] = Query(
+        None, description="Search by location or part of location"
+    ),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    date_from: Optional[datetime] = Query(None, description="Start of date range (ISO format)"),
-    date_to: Optional[datetime] = Query(None, description="End of date range (ISO format)" ),
+    date_from: Optional[datetime] = Query(
+        None, description="Start of date range (ISO format)"
+    ),
+    date_to: Optional[datetime] = Query(
+        None, description="End of date range (ISO format)"
+    ),
     skip: int = Query(0, ge=0, description="Number of events to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of events to return"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of events to return"
+    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -57,15 +64,15 @@ async def search_events(
     - **limit**: Maximum number of events to return (max 1000)
     """
     try:
-        events = EventService.search_events(
-            db,
-            title,
-            location,
-            is_active,
-            date_from,
-            date_to,
-            skip,
-            limit,
+        event_service = EventService(db)
+        events = event_service.search_events(
+            title=title,
+            location=location,
+            is_active=is_active,
+            date_from=date_from,
+            date_to=date_to,
+            skip=skip,
+            limit=limit,
         )
         return events
     except Exception as e:
@@ -80,7 +87,8 @@ async def get_event_by_id(event_id: int, db: Session = Depends(get_db)):
     - **event_id**: The unique identifier of the event
     """
     try:
-        event = EventService.get_event_by_id(db, event_id)
+        event_service = EventService(db)
+        event = event_service.get_event_by_id(event_id)
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
         return event
@@ -98,7 +106,8 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
     - **event**: Event data to create
     """
     try:
-        new_event = EventService.create_new_event(db, event)
+        event_service = EventService(db)
+        new_event = event_service.create_new_event(event)
         return new_event
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -107,25 +116,30 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{event_id}", response_model=Event, summary="Update event by ID")
-async def update_event(
-    event_id: int, event: EventUpdate, db: Session = Depends(get_db)
-):
+async def update_event(event_id: int, event: EventUpdate, db: Session = Depends(get_db)):
     try:
-        updated_event = EventService.update_event(db, event_id, event)
+        event_service = EventService(db)
+        updated_event = event_service.update_event(event_id, event)
+        if not updated_event:
+            raise HTTPException(status_code=404, detail="Event not found")
         return updated_event
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.delete("/{event_id}", response_model=Event, summary="Delete event by ID")
+@router.delete("/{event_id}", summary="Delete event by ID")
 async def delete_event(event_id: int, db: Session = Depends(get_db)):
     try:
-        deleted_event = EventService.delete_event(db, event_id)
-        return deleted_event
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        event_service = EventService(db)
+        deleted = event_service.delete_event(event_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return {"message": "Event deleted successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
