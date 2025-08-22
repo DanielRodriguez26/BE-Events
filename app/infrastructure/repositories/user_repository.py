@@ -12,8 +12,7 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
         self.user_model = User
-    
-    
+
     def get_user(self, user_id: int) -> Optional[User]:
         """Get a single user by ID."""
         return self.db.query(User).filter(User.id == user_id).first()
@@ -21,23 +20,36 @@ class UserRepository:
     def get_all_users(self, skip: int = 0, limit: int = 100) -> List[User]:
         """Get all users with pagination."""
         return self.db.query(User).offset(skip).limit(limit).all()
-    
+
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """Login a user."""
-        return self.db.query(User).filter(User.username == username, User.password == password).first()
-    
+        return (
+            self.db.query(User)
+            .filter(User.username == username, User.password == password)
+            .first()
+        )
+
     def get_user_by_username(self, username: str) -> Optional[User]:
         """Get a user by username."""
         return self.db.query(User).filter(User.username == username).first()
-    
+
     def get_user_by_email(self, email: str) -> Optional[User]:
         """Get a user by email."""
         return self.db.query(User).filter(User.email == email).first()
-    
+
     def create_user(self, user_data: UserCreate) -> User:
         """Create a user."""
-        user = User(**user_data.model_dump())
-        self.db.add(user)
+        # Exclude confirm_password from the data
+        user_dict = user_data.dict()
+        user_dict.pop("confirm_password", None)
+        user_dict.pop("id", None)  # Also exclude id if present
+
+        user_new = User(**user_dict)
+        self.db.add(user_new)
         self.db.commit()
-        self.db.refresh(user)
-        return user
+        self.db.refresh(user_new)
+
+        # Set password to confirm_password after saving
+        self.db.commit()
+        user_new.password = user_data.confirm_password  # type: ignore
+        return user_new

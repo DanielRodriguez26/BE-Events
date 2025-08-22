@@ -1,299 +1,127 @@
 # 🐳 Docker Setup for BE-Events
 
-Esta documentación explica cómo usar Docker para ejecutar la aplicación BE-Events.
+Esta documentación explica cómo usar Docker para ejecutar la aplicación BE-Events en un entorno de desarrollo local.
 
 ## 📋 Prerrequisitos
 
-- Docker Desktop instalado
-- Docker Compose instalado
-- Git instalado
+- Docker Desktop instalado y en ejecución.
+- Un terminal como PowerShell o CMD.
+- Git instalado.
 
-## 🚀 Configuración Inicial
+## 🚀 Configuración y Ejecución (Windows)
 
-### 1. Setup Automático (Recomendado)
+Estos pasos te guiarán para levantar el entorno desde cero.
 
-```bash
-# Ejecutar setup automático
-make setup
+### 1. Crear el archivo de entorno
+
+Copia el archivo de ejemplo para crear tu configuración local.
+
+```powershell
+# Copia env.example a .env si no existe
+if (-not (Test-Path .env)) { Copy-Item env.example .env }
 ```
 
-Este comando:
-- Verifica que Docker esté instalado
-- Crea el archivo `.env` con configuraciones por defecto
-- Genera certificados SSL para desarrollo
-- Crea directorios necesarios
+### 2. Crear directorios necesarios
 
-### 2. Setup Manual
+La aplicación necesita directorios para logs y para almacenar los datos de la base de datos y de Redis.
 
-Si prefieres hacerlo manualmente:
-
-```bash
-# 1. Crear archivo .env
-cp env.example .env
-
-# 2. Generar certificados SSL
-chmod +x scripts/generate-ssl.sh
-./scripts/generate-ssl.sh
-
-# 3. Crear directorios
-mkdir -p logs data/postgres data/redis
+```powershell
+# Crear directorios
+New-Item -ItemType Directory -Force -Path 'logs', 'data/postgres', 'data/redis'
 ```
 
-## 🏃‍♂️ Ejecutar la Aplicación
+> **Nota sobre SSL:** La configuración de Nginx por defecto requiere certificados SSL. Como la generación de certificados puede ser compleja en Windows sin herramientas como `openssl`, hemos ajustado la configuración de `nginx.conf` para que funcione sin SSL en el entorno local.
 
-### Desarrollo (con Hot Reload)
+### 3. Construir e iniciar los contenedores
 
-```bash
-# Iniciar en primer plano
-make dev
+Este comando descargará las imágenes necesarias (Postgres, Redis), construirá la imagen de tu aplicación y lanzará todos los servicios en segundo plano.
 
-# O iniciar en background
-make dev-detached
+```powershell
+docker-compose up --build -d
 ```
 
-### Producción
+### 4. Ejecutar las migraciones de la base de datos
 
-```bash
-# Iniciar en primer plano
-make prod
+Una vez que los contenedores estén corriendo, necesitas crear el esquema de la base de datos. Esto se hace con Alembic.
 
-# O iniciar en background
-make prod-detached
+> **Importante:** La primera vez que ejecutes esto, puede que necesites borrar las migraciones existentes en `alembic/versions/` si el historial no coincide con la base de datos vacía.
+
+```powershell
+docker-compose exec app alembic upgrade head
 ```
 
-### Testing
+¡Y eso es todo! Tu entorno debería estar funcionando.
 
-```bash
-# Ejecutar tests
-make test
+## 🌐 Puntos de Acceso
 
-# Ejecutar tests con cobertura
-make test-coverage
-```
+- **API de la Aplicación**: [http://localhost:8000](http://localhost:8000)
+- **Documentación de la API (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Base de datos PostgreSQL**: `localhost:5432`
+- **Redis**: `localhost:6379`
 
-## 🔧 Comandos Útiles
+## 🔧 Comandos Útiles de Docker Compose
+
+Como no usamos `Makefile`, aquí están los comandos directos de `docker-compose` que necesitarás.
 
 ### Gestión de Contenedores
 
-```bash
-# Ver logs de la aplicación
-make logs
+```powershell
+# Ver el estado de los contenedores
+docker-compose ps
 
-# Acceder al shell del contenedor
-make shell
+# Ver los logs de la aplicación en tiempo real
+docker-compose logs -f app
 
-# Acceder a PostgreSQL
-make db-shell
+# Detener y eliminar los contenedores
+docker-compose down
 
-# Acceder a Redis
-make redis-shell
-
-# Verificar estado de servicios
-make status
-
-# Verificar salud de servicios
-make health
+# Detener, eliminar contenedores y borrar los volúmenes de datos (reset completo)
+docker-compose down -v
 ```
 
-### Base de Datos
+### Acceder a los servicios (Shell)
 
-```bash
-# Ejecutar migraciones
-make migrate
+```powershell
+# Acceder al shell del contenedor de la aplicación
+docker-compose exec app /bin/bash
 
-# Poblar base de datos
-make seed
+# Acceder a la línea de comandos de PostgreSQL
+docker-compose exec postgres psql -U events_user -d events_db
 
-# Resetear base de datos
-make reset-db
+# Acceder a la línea de comandos de Redis
+docker-compose exec redis redis-cli
 ```
 
-### Desarrollo
+### Gestión de la Base de Datos con Alembic
 
-```bash
-# Formatear código
-make format
+```powershell
+# Aplicar todas las migraciones
+docker-compose exec app alembic upgrade head
 
-# Linting
-make lint
+# Revertir todas las migraciones (dejar la BD vacía)
+docker-compose exec app alembic downgrade base
 
-# Type checking
-make type-check
+# Generar un nuevo archivo de migración basado en los cambios de los modelos
+# (Reemplaza "nombre_descriptivo" con una descripción corta del cambio)
+docker-compose exec app alembic revision --autogenerate -m "nombre_descriptivo"
 ```
-
-### Limpieza
-
-```bash
-# Detener contenedores
-make clean
-
-# Detener contenedores y eliminar volúmenes
-make clean-all
-```
-
-## 🌐 Acceso a Servicios
-
-Una vez que los contenedores estén ejecutándose:
-
-- **Aplicación**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Base de datos PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
-
-## 📁 Estructura de Archivos Docker
-
-```
-├── Dockerfile              # Imagen de producción
-├── Dockerfile.dev          # Imagen de desarrollo
-├── docker-compose.yml      # Configuración de producción
-├── docker-compose.dev.yml  # Configuración de desarrollo
-├── docker-compose.test.yml # Configuración de testing
-├── .dockerignore           # Archivos a ignorar en build
-├── nginx/
-│   └── nginx.conf         # Configuración de Nginx
-├── scripts/
-│   ├── docker-setup.sh    # Script de configuración
-│   └── generate-ssl.sh    # Generación de certificados SSL
-└── Makefile               # Comandos útiles
-```
-
-## 🔧 Configuración
-
-### Variables de Entorno
-
-El archivo `.env` contiene las siguientes variables:
-
-```env
-# Database Configuration
-POSTGRES_DB=events_db
-POSTGRES_USER=events_user
-POSTGRES_PASSWORD=events_password
-
-# Application Configuration
-SECRET_KEY=your-super-secret-key-change-this-in-production
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-ALGORITHM=HS256
-
-# Environment
-ENVIRONMENT=development
-```
-
-### Puertos
-
-- **8000**: Aplicación FastAPI
-- **5432**: PostgreSQL
-- **6379**: Redis
-- **5678**: Debug port (desarrollo)
 
 ## 🐛 Troubleshooting
 
-### Problemas Comunes
+### El contenedor `app` no se mantiene en ejecución
 
-1. **Puerto ya en uso**
-   ```bash
-   # Verificar qué está usando el puerto
-   lsof -i :8000
-   
-   # Detener contenedores
-   make clean
-   ```
+1.  **Causa más común:** Un error en el código de Python impide que Uvicorn se inicie.
+2.  **Solución:** Revisa los logs para ver el traceback del error.
+    ```powershell
+    docker-compose logs app
+    ```
 
-2. **Error de permisos**
-   ```bash
-   # Dar permisos a scripts
-   chmod +x scripts/*.sh
-   ```
+### Error de `relation "..." does not exist` al migrar
 
-3. **Base de datos no conecta**
-   ```bash
-   # Verificar estado de PostgreSQL
-   make health
-   
-   # Reiniciar servicios
-   make restart
-   ```
-
-4. **Certificados SSL**
-   ```bash
-   # Regenerar certificados
-   ./scripts/generate-ssl.sh
-   ```
-
-### Logs Detallados
-
-```bash
-# Ver logs de todos los servicios
-docker-compose logs
-
-# Ver logs de un servicio específico
-docker-compose logs app
-docker-compose logs postgres
-docker-compose logs redis
-```
-
-## 🔒 Seguridad
-
-### Producción
-
-Para producción, asegúrate de:
-
-1. Cambiar `SECRET_KEY` en `.env`
-2. Usar certificados SSL reales
-3. Configurar firewall
-4. Usar variables de entorno seguras
-5. No exponer puertos innecesarios
-
-### Desarrollo
-
-- Los certificados SSL son autofirmados
-- Las credenciales son por defecto
-- Los puertos están expuestos para debugging
-
-## 📊 Monitoreo
-
-### Health Checks
-
-```bash
-# Verificar salud de servicios
-make health
-```
-
-### Métricas
-
-- Los contenedores incluyen health checks
-- Nginx incluye logging detallado
-- FastAPI incluye métricas básicas
-
-## 🚀 Despliegue
-
-### Desarrollo Local
-
-```bash
-make dev
-```
-
-### Producción Local
-
-```bash
-make prod
-```
-
-### CI/CD
-
-Los archivos Docker están preparados para CI/CD:
-
-```yaml
-# Ejemplo para GitHub Actions
-- name: Build and test
-  run: |
-    make build
-    make test
-```
-
-## 📚 Recursos Adicionales
-
-- [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [FastAPI Docker Guide](https://fastapi.tiangolo.com/deployment/docker/)
-- [PostgreSQL Docker](https://hub.docker.com/_/postgres)
-- [Redis Docker](https://hub.docker.com/_/redis)
+1.  **Causa:** El historial de migraciones de Alembic no está sincronizado con el estado de la base de datos. Esto suele pasar cuando se trabaja en diferentes ramas o se borra la base de datos manualmente.
+2.  **Solución (para entorno de desarrollo):**
+    - Borra los volúmenes de la base de datos: `docker-compose down -v`.
+    - Borra todos los archivos dentro de `alembic/versions/`.
+    - Vuelve a levantar los contenedores: `docker-compose up --build -d`.
+    - Genera una nueva migración inicial: `docker-compose exec app alembic revision --autogenerate -m "initial_migration"`.
+    - Aplica la migración: `docker-compose exec app alembic upgrade head`.

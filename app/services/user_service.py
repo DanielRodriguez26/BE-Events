@@ -46,7 +46,7 @@ class UserService:
 
     def create_user(self, user_data: UserCreate) -> User:
         """Create a user."""
-        user_data = validate_user(user_data)
+        user_data = validate_user(user_data, self.user_repository)
         
         user_data.password = get_password_hash(user_data.password)
 

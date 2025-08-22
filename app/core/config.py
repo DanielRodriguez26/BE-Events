@@ -5,18 +5,18 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    database_host: str = "localhost"
+    postgres_user: str = "events_user"
+    postgres_password: str = "events_password"
+    postgres_db: str = "events_db"
+    database_host: str = "postgres"  # Default to the service name for Docker
     database_port: str = "5432"
-    database_name: str = "events_db"
-    database_user: str = "postgres"
-    database_password: str = "1234"
 
     @property
     def database_url(self) -> str:
-        return f"postgresql://{self.database_user}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"
+        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.database_host}:{self.database_port}/{self.postgres_db}"
 
     # Security
-    secret_key: str = "your-secret-key-change-in-production"
+    secret_key: str = "your-super-secret-key-change-this-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        case_sensitive = False
+        case_sensitive = True
 
 
 settings = Settings()
