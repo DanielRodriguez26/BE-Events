@@ -90,7 +90,7 @@ class TestAuthentication:
             user = User(
                 username="inactiveuser_auth",
                 email="inactive_auth@example.com",
-                password=get_password_hash("testpass123"),
+                password=get_password_hash("testpass1234"),
                 first_name="Inactive",
                 last_name="User",
                 phone="+34 600 000 002",
@@ -103,7 +103,7 @@ class TestAuthentication:
         # Test login
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "inactiveuser_auth2", "password": "testpa2ss123"},
+            json={"username": "inactiveuser_auth", "password": "testpass1234"},
         )
 
         assert response.status_code == 401

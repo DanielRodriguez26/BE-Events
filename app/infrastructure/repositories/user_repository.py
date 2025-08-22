@@ -28,6 +28,10 @@ class UserRepository:
             .filter(User.username == username, User.password == password)
             .first()
         )
+    
+    def get_users_count(self) -> int:
+        """Get the total number of users."""
+        return self.db.query(func.count(self.user_model.id)).scalar() or 0
 
     def get_user_by_username(self, username: str) -> Optional[User]:
         """Get a user by username."""

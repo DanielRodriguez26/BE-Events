@@ -7,21 +7,23 @@ from sqlalchemy.orm import Session
 from app.api.schemas.event_schemas import EventCreate, EventUpdate
 from app.db.models import Event
 
+
 class EventRepository:
     def __init__(self, db: Session):
         self.db = db
         self.event_model = Event
 
-
     def get_event(self, event_id: int) -> Optional[Event]:
         """Get a single event by ID."""
         return self.db.query(Event).filter(Event.id == event_id).first()
-
 
     def get_all_events(self, skip: int = 0, limit: int = 100) -> List[Event]:
         """Get all events with pagination."""
         return self.db.query(Event).offset(skip).limit(limit).all()
 
+    def get_events_count(self) -> int:
+        """Get the total number of events."""
+        return self.db.query(func.count(self.event_model.id)).scalar() or 0
 
     def create_event(self, event: EventCreate) -> Event:
         """Create a new event."""
@@ -30,7 +32,6 @@ class EventRepository:
         self.db.commit()
         self.db.refresh(db_event)
         return db_event
-
 
     def update_event(self, event_id: int, event: EventUpdate) -> Optional[Event]:
         """Update an existing event."""
@@ -43,7 +44,6 @@ class EventRepository:
             self.db.refresh(db_event)
         return db_event
 
-
     def delete_event(self, event_id: int) -> bool:
         """Delete an event."""
         db_event = self.get_event(event_id)
@@ -52,7 +52,6 @@ class EventRepository:
             self.db.commit()
             return True
         return False
-
 
     def search_events(
         self,
@@ -79,7 +78,9 @@ class EventRepository:
 
         # Filter by location (case insensitive partial match)
         if location:
-            query = query.filter(func.lower(Event.location).contains(func.lower(location)))
+            query = query.filter(
+                func.lower(Event.location).contains(func.lower(location))
+            )
 
         # Filter by active status
         if is_active is not None:

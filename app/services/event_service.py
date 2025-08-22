@@ -1,11 +1,16 @@
 from datetime import datetime
+import math
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from app.api.schemas.event_schemas import Event, EventCreate, EventUpdate
+from app.api.schemas.pagination_schema import Page
 from app.infrastructure.repositories.event_repository import EventRepository
-from app.services.validators.event_validators import validate_event_data, validate_event_update_data
+from app.services.validators.event_validators import (
+    validate_event_data,
+    validate_event_update_data,
+)
 
 
 class EventService:
@@ -13,10 +18,24 @@ class EventService:
         self.db = db
         self.event_repository = EventRepository(db)
 
-    def get_all_events(self, skip: int = 0, limit: int = 100) -> List[Event]:
+    def get_all_events(self, skip: int = 0,page: int =1, limit: int = 100) ->Page:
         """Get all events with business logic validation."""
         events = self.event_repository.get_all_events(skip=skip, limit=limit)
-        return [Event.from_orm(event) for event in events]
+        eventList = [Event.from_orm(event) for event in events]
+        total_events = self.event_repository.get_events_count()
+        total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
+        
+        return Page(
+            items=eventList,
+            page=page,
+            size=limit,
+            total_items=total_events,
+            total_pages=total_pages,
+        )
+
+    def get_total_events_count(self) -> int:
+        """Get the total number of events."""
+        return self.event_repository.get_events_count()
 
     def get_event_by_id(self, event_id: int) -> Optional[Event]:
         """Get event by ID with business logic validation."""

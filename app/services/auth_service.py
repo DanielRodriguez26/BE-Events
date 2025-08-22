@@ -71,3 +71,31 @@ class AuthService:
         """Register a user."""
         user = self.user_repo.create_user(register_data)
         return self.login(LoginRequest(username=user.username, password=user.password))
+
+    def get_current_user(self, token: str) -> User:
+        """Get current user from token."""
+        payload = verify_token(token)
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user_id: str = payload.get("sub")  # type:ignore
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user = self.db.query(User).filter(User.id == int(user_id)).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return user

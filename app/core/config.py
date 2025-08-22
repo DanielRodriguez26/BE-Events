@@ -5,15 +5,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    postgres_user: str = "events_user"
-    postgres_password: str = "events_password"
-    postgres_db: str = "events_db"
-    database_host: str = "postgres"  # Default to the service name for Docker
-    database_port: str = "5432"
-
-    @property
-    def database_url(self) -> str:
-        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.database_host}:{self.database_port}/{self.postgres_db}"
+    database_url: str = "postgresql://postgres:1234@localhost:5432/events_db"
 
     # Security
     secret_key: str = "your-super-secret-key-change-this-in-production"
@@ -27,7 +19,8 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        case_sensitive = True
+        case_sensitive = False
+        extra = "ignore"
 
 
 settings = Settings()

@@ -1,8 +1,10 @@
 from datetime import datetime
+import math
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from app.api.schemas.pagination_schema import Page
 from app.api.schemas.user_schemas import User, UserCreate
 from app.core.security import get_password_hash, verify_password
 from app.infrastructure.repositories.user_repository import UserRepository
@@ -14,10 +16,20 @@ class UserService:
         self.db = db
         self.user_repository = UserRepository(db)
 
-    def get_all_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+    def get_all_users(self, skip: int = 0,page: int =1, limit: int = 100) -> Page:
         """Get all users with business logic validation."""
         users = self.user_repository.get_all_users(skip=skip, limit=limit)
-        return [User.from_orm(user) for user in users]
+        userList = [User.from_orm(user) for user in users]
+        total_users = self.user_repository.get_users_count()
+        total_pages = math.ceil(total_users / limit) if total_users > 0 else 1
+
+        return Page(
+            items=userList,
+            page=page,
+            size=limit,
+            total_items=total_users,
+            total_pages=total_pages,
+        )
 
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         """Get user by ID with business logic validation."""
