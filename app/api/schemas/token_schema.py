@@ -6,6 +6,8 @@ This module contains Pydantic models for token responses.
 
 from pydantic import BaseModel
 
+from app.api.schemas.user_schemas import User
+
 
 class TokenResponse(BaseModel):
     """Token response model."""
@@ -14,7 +16,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user_id: int
-    username: str
+    user: User
     email: str
     role: str
 
