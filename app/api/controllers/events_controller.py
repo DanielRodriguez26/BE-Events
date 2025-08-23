@@ -231,7 +231,7 @@ async def update_event(
     event_id: int,
     event: EventUpdate,
     db: DBSession = Depends(get_db),
-    current_user: User = Depends(require_organizer),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update an existing event.
