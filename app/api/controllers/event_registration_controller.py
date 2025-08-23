@@ -59,7 +59,7 @@ async def get_user_registrations(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number to retrieve"),
     size: int = Query(20, ge=1, le=100, description="Number of registrations per page"),
-    current_user: int = 13,
+    current_user: User = Depends(get_current_user)
 ):
     """
     Obtiene todos los registros del usuario autenticado.
@@ -72,7 +72,12 @@ async def get_user_registrations(
     try:
         registration_service = EventRegistrationService(db)
         skip = (page - 1) * size
-        registrations = registration_service.get_user_registrations(current_user, skip=skip, page=page, limit=size)
+        registrations = registration_service.get_user_registrations(
+            user_id=int(current_user.id), 
+            skip=skip, 
+            page=page, 
+            limit=size
+        ) 
         return registrations
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

@@ -1,5 +1,5 @@
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.models.event_register_models import (
     EventRegistration as EventRegistrationModel,
@@ -11,9 +11,12 @@ class EventRegistrationRepository:
         self.db = db
         self.event_registration_model = EventRegistrationModel
 
-    def get_user_registrations (self, user_id: int, skip: int = 0, page: int = 1, limit: int = 20):
+    def get_user_registrations(
+        self, user_id: int, skip: int = 0, page: int = 1, limit: int = 20
+    ):
         return (
             self.db.query(self.event_registration_model)
+            .options(joinedload(self.event_registration_model.event))
             .filter(self.event_registration_model.user_id == user_id)
             .offset(skip)
             .limit(limit)

@@ -61,6 +61,7 @@ class EventRegistrationWithEvent(BaseModel):
     event_title: str
     event_date: datetime
     event_location: str
+    
 
     class Config:
         from_attributes = True

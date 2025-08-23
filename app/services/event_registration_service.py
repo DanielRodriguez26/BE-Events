@@ -5,14 +5,20 @@ from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.api.schemas.event_registration_schemas import (
-    EventRegistration, EventRegistrationCreate, EventRegistrationUpdate,
-    EventRegistrationWithEvent)
+    EventRegistration,
+    EventRegistrationCreate,
+    EventRegistrationUpdate,
+    EventRegistrationWithEvent,
+)
 from app.api.schemas.pagination_schema import Page
 from app.db.models.event_models import Event
-from app.db.models.event_register_models import \
-    EventRegistration as EventRegistrationModel
+from app.db.models.event_register_models import (
+    EventRegistration as EventRegistrationModel,
+)
 from app.db.models.user_model import User
-from app.infrastructure.repositories.event_registration_repository import EventRegistrationRepository
+from app.infrastructure.repositories.event_registration_repository import (
+    EventRegistrationRepository,
+)
 
 
 class EventRegistrationService:
@@ -95,19 +101,46 @@ class EventRegistrationService:
 
         return EventRegistration.from_orm(new_registration)
 
-    def get_user_registrations(self, user_id: int, skip: int = 0, page: int = 1, limit: int = 20) -> Page[EventRegistrationWithEvent]:
-        registrations = self.event_registration_repository.get_user_registrations(user_id, skip=skip, page=page, limit=limit)
-        registration_list = [EventRegistrationWithEvent.model_validate(registration) for registration in registrations]
-        total_registrations = self.event_registration_repository.get_count_registrations()
-        total_pages = (total_registrations + limit - 1) // limit 
+    def get_user_registrations(
+        self, user_id: int, skip: int = 0, page: int = 1, limit: int = 20
+    ) -> Page[EventRegistrationWithEvent]:
+        try:
+            registrations = self.event_registration_repository.get_user_registrations(
+                user_id, skip=skip, page=page, limit=limit
+            )
 
-        return Page(
-            items=registration_list,
-            total_items=total_registrations,
-            page=page,
-            size=limit,
-            total_pages=total_pages,
-        )
+            total_registrations = (
+                self.event_registration_repository.get_count_registrations()
+            )
+            total_pages = (total_registrations + limit - 1) // limit
+
+            # Create EventRegistrationWithEvent schemas manually to include event data
+            registration_schemas = []
+            for reg in registrations:
+                registration_data = {
+                    "id": reg.id,
+                    "event_id": reg.event_id,
+                    "user_id": reg.user_id,
+                    "number_of_participants": reg.number_of_participants,
+                    "created_at": reg.created_at,
+                    "updated_at": reg.updated_at,
+                    "event_title": reg.event.title,
+                    "event_date": reg.event.start_date,
+                    "event_location": reg.event.location,
+                }
+                registration_schemas.append(
+                    EventRegistrationWithEvent(**registration_data)
+                )
+
+            return Page(
+                items=registration_schemas,
+                total_items=total_registrations,
+                page=page,
+                size=limit,
+                total_pages=total_pages,
+            )
+        except Exception as e:
+            raise ValueError(f"Error al obtener los registros de usuario: {e}")
 
     def get_event_registrations(
         self, event_id: int, skip: int = 0, page: int = 1, limit: int = 20
@@ -194,7 +227,7 @@ class EventRegistrationService:
             )
 
             # Restar el registro actual para calcular la capacidad real disponible
-            available_capacity = event.capacity - (
+            available_capacity = event.capacity - (  # type:ignore
                 current_registrations - registration.number_of_participants
             )
 
