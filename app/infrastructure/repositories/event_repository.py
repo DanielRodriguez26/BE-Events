@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import and_, func, or_
@@ -27,7 +27,7 @@ class EventRepository:
 
     def create_event(self, event: EventCreate) -> Event:
         """Create a new event."""
-        db_event = Event(**event.dict())
+        db_event = Event(**event.model_dump())
         self.db.add(db_event)
         self.db.commit()
         self.db.refresh(db_event)
@@ -76,28 +76,28 @@ class EventRepository:
         if title:
             query = query.filter(Event.title.ilike(f"%{title}%"))
 
-        # Filter by location (case insensitive partial match)
         if location:
-            query = query.filter(
-                func.lower(Event.location).contains(func.lower(location))
-            )
+            query = query.filter(Event.location.ilike(f"%{location}%"))
 
-        # Filter by active status
         if is_active is not None:
             query = query.filter(Event.is_active == is_active)
 
-        # Filter by date range (events that overlap with the given period)
+        # -- Lógica de fechas corregida --
         if date_from and date_to:
-            # Events that start before the end of the range AND end after the start of the range
+            # Amplía date_to para incluir todo el día
+            final_date_to = date_to + timedelta(days=1)
+
+            # La consulta verifica que los rangos se solapen.
+            # Usa `<` en la fecha de fin para incluir todo el día
             query = query.filter(
-                and_(Event.start_date <= date_to, Event.end_date >= date_from)
+                and_(Event.start_date < final_date_to, Event.end_date >= date_from)
             )
         elif date_from:
-            # Events that end after the start date
             query = query.filter(Event.end_date >= date_from)
         elif date_to:
-            # Events that start before the end date
-            query = query.filter(Event.start_date <= date_to)
+            # Amplía date_to para incluir todo el día
+            final_date_to = date_to + timedelta(days=1)
+            query = query.filter(Event.start_date < final_date_to)
 
         # Apply pagination
         return query.offset(skip).limit(limit).all()

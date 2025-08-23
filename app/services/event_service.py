@@ -21,7 +21,7 @@ class EventService:
     def get_all_events(self, skip: int = 0,page: int =1, limit: int = 100) ->Page:
         """Get all events with business logic validation."""
         events = self.event_repository.get_all_events(skip=skip, limit=limit)
-        eventList = [Event.from_orm(event) for event in events]
+        eventList = [Event.model_validate(event) for event in events]
         total_events = self.event_repository.get_events_count()
         total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
         
@@ -41,7 +41,7 @@ class EventService:
         """Get event by ID with business logic validation."""
         event = self.event_repository.get_event(event_id)
         if event:
-            return Event.from_orm(event)
+            return Event.model_validate(event)
         return None
 
     def create_new_event(self, event_data: EventCreate) -> Event:
@@ -51,7 +51,7 @@ class EventService:
         validate_event_data(event_data, events)
 
         event = self.event_repository.create_event(event_data)
-        return Event.from_orm(event)
+        return Event.model_validate(event)
 
     def update_event(self, event_id: int, event_data: EventUpdate) -> Optional[Event]:
         """Update existing event with business logic validation."""
@@ -63,7 +63,7 @@ class EventService:
 
         updated_event = self.event_repository.update_event(event_id, event_data)
         if updated_event:
-            return Event.from_orm(updated_event)
+            return Event.model_validate(updated_event)
         return None
 
     def delete_event(self, event_id: int) -> bool:
@@ -91,4 +91,4 @@ class EventService:
             skip=skip,
             limit=limit,
         )
-        return [Event.from_orm(event) for event in events]
+        return [Event.model_validate(event) for event in events]

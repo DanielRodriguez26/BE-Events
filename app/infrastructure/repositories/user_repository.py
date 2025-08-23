@@ -28,13 +28,13 @@ class UserRepository:
             .filter(User.username == username, User.password == password)
             .first()
         )
-    
+
     def get_users_count(self) -> int:
         """Get the total number of users."""
         return self.db.query(func.count(self.user_model.id)).scalar() or 0
 
     def get_user_by_username(self, username: str) -> Optional[User]:
-        """Get a user by username."""
+        """Get a user by username with role relationship."""
         return self.db.query(User).filter(User.username == username).first()
 
     def get_user_by_email(self, email: str) -> Optional[User]:
@@ -44,7 +44,7 @@ class UserRepository:
     def create_user(self, user_data: UserCreate) -> User:
         """Create a user."""
         # Exclude confirm_password from the data
-        user_dict = user_data.dict()
+        user_dict = user_data.model_dump()
         user_dict.pop("confirm_password", None)
         user_dict.pop("id", None)  # Also exclude id if present
 
@@ -52,8 +52,4 @@ class UserRepository:
         self.db.add(user_new)
         self.db.commit()
         self.db.refresh(user_new)
-
-        # Set password to confirm_password after saving
-        self.db.commit()
-        user_new.password = user_data.confirm_password  # type: ignore
         return user_new

@@ -26,7 +26,10 @@ class User(UserBase):
 
 class UserCreate(UserBase):
     id: Optional[int] = None
-    confirm_password: str 
+    confirm_password: str
+
+    class Config:
+        from_attributes = True 
 
 
 class UserUpdate(BaseModel):

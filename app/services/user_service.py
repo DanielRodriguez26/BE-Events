@@ -19,7 +19,7 @@ class UserService:
     def get_all_users(self, skip: int = 0,page: int =1, limit: int = 100) -> Page:
         """Get all users with business logic validation."""
         users = self.user_repository.get_all_users(skip=skip, limit=limit)
-        userList = [User.from_orm(user) for user in users]
+        userList = [User.model_validate(user) for user in users]
         total_users = self.user_repository.get_users_count()
         total_pages = math.ceil(total_users / limit) if total_users > 0 else 1
 
@@ -35,8 +35,12 @@ class UserService:
         """Get user by ID with business logic validation."""
         user = self.user_repository.get_user(user_id)
         if user:
-            return User.from_orm(user)
+            return User.model_validate(user)
         return None
+
+    def get_user_by_username(self, username: str):
+        """Get user by username (returns SQLAlchemy object for internal use)."""
+        return self.user_repository.get_user_by_username(username)
 
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """Login a user."""

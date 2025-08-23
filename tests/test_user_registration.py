@@ -22,6 +22,7 @@ class TestUserRegistration:
             "username": "newuser_test",
             "email": "newuser@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "New",
             "last_name": "User",
             "phone": "+34 600 000 999",
@@ -75,6 +76,7 @@ class TestUserRegistration:
             "username": "existinguser",  # Duplicate username
             "email": "different@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Different",
             "last_name": "User",
             "phone": "+34 600 000 777",
@@ -108,6 +110,7 @@ class TestUserRegistration:
             "username": "differentuser",  # Different username
             "email": "existing2@test.com",  # Duplicate email
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Different",
             "last_name": "User",
             "phone": "+34 600 000 777",
@@ -126,6 +129,7 @@ class TestUserRegistration:
         user_data_missing_username = {
             "email": "test@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Test",
             "last_name": "User",
             "phone": "+34 600 000 777",
@@ -140,6 +144,7 @@ class TestUserRegistration:
         user_data_missing_email = {
             "username": "testuser",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Test",
             "last_name": "User",
             "phone": "+34 600 000 777",
@@ -170,6 +175,7 @@ class TestUserRegistration:
             "username": "testuser",
             "email": "invalid-email",  # Invalid email format
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Test",
             "last_name": "User",
             "phone": "+34 600 000 777",
@@ -186,6 +192,7 @@ class TestUserRegistration:
             "username": "adminuser_test",
             "email": "admin@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Admin",
             "last_name": "User",
             "phone": "+34 600 000 666",
@@ -206,6 +213,7 @@ class TestUserRegistration:
             "username": "inactiveuser_test",
             "email": "inactive@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "Inactive",
             "last_name": "User",
             "phone": "+34 600 000 555",
@@ -229,6 +237,7 @@ class TestUserRegistration:
             "username": "passwordtest_user",
             "email": "passwordtest@test.com",
             "password": "plaintextpassword",
+            "confirm_password": "plaintextpassword",
             "first_name": "Password",
             "last_name": "Test",
             "phone": "+34 600 000 444",
@@ -251,6 +260,7 @@ class TestUserRegistration:
             "username": "special_user",
             "email": "special@test.com",
             "password": "securepass123",
+            "confirm_password": "securepass123",
             "first_name": "José María",
             "last_name": "García-López",
             "phone": "+34 600 000 333",

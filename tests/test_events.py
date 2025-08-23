@@ -118,16 +118,20 @@ class TestEventReadOperations:
         """Test getting all events when database is empty."""
         response = client.get("/api/v1/events/")
         assert response.status_code == 200
-        assert response.json() == []
+        data = response.json()
+        assert data["items"] == []
+        assert data["total_items"] == 0
+        assert data["page"] == 1
 
     def test_get_all_events_with_data(self, test_db, sample_event_in_db):
         """Test getting all events with data in database."""
         response = client.get("/api/v1/events/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["title"] == sample_event_in_db.title
-        assert data[0]["id"] == sample_event_in_db.id
+        assert len(data["items"]) == 1
+        assert data["total_items"] == 1
+        assert data["items"][0]["title"] == sample_event_in_db.title
+        assert data["items"][0]["id"] == sample_event_in_db.id
 
     def test_get_event_by_id_not_found(self, test_db):
         """Test getting event by ID when it doesn't exist."""
@@ -351,6 +355,50 @@ class TestEventSearchOperations:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 0
+
+    def test_search_events_with_empty_date_parameters(
+        self, test_db, sample_event_in_db
+    ):
+        """Test searching events with empty date parameters (should not cause 422 error)."""
+        response = client.get("/api/v1/events/search?date_from=&date_to=")
+        assert response.status_code == 200
+        data = response.json()
+        # Should return all events since no date filtering is applied
+        assert len(data) >= 1
+
+    def test_search_events_with_valid_date_parameters(
+        self, test_db, sample_event_in_db
+    ):
+        """Test searching events with valid date parameters."""
+        # Use YYYY-MM-DD format dates (like the frontend sends)
+        date_from = "2024-01-01"
+        date_to = "2024-12-31"
+        response = client.get(
+            f"/api/v1/events/search?date_from={date_from}&date_to={date_to}&page=1&size=10"
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Should return events within the date range
+        assert isinstance(data, list)
+
+    def test_search_events_with_iso_date_parameters(self, test_db, sample_event_in_db):
+        """Test searching events with ISO format date parameters."""
+        # Use ISO format dates
+        date_from = "2024-01-01T00:00:00"
+        date_to = "2024-12-31T23:59:59"
+        response = client.get(
+            f"/api/v1/events/search?date_from={date_from}&date_to={date_to}&page=1&size=10"
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Should return events within the date range
+        assert isinstance(data, list)
+
+    def test_search_events_with_invalid_date_format(self, test_db):
+        """Test searching events with invalid date format."""
+        response = client.get("/api/v1/events/search?date_from=invalid-date")
+        assert response.status_code == 400
+        assert "Invalid date_from format" in response.json()["detail"]
 
 
 class TestEventUpdateOperations:

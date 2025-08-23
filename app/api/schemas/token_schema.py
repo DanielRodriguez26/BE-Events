@@ -18,6 +18,7 @@ class TokenResponse(BaseModel):
     user_id: int
     user: User
     email: str
+    username: str
     role: str
 
 

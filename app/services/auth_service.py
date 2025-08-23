@@ -31,8 +31,8 @@ class AuthService:
 
     def login(self, login_data: LoginRequest) -> TokenResponse:
         """Login user and return access token."""
-        # 1. Autenticar usando el repositorio
-        user = self.user_repo.authenticate_user(login_data.username, login_data.password)
+        # 1. First check if user exists
+        user = self.user_repo.get_user_by_username(login_data.username)
 
         if not user:
             raise HTTPException(
@@ -40,11 +40,18 @@ class AuthService:
                 detail="Incorrect username or password",
             )
 
-        # Check if user is active
+        # 2. Check if user is active
         if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User account is deactivated",
+            )
+
+        # 3. Verify password
+        if not verify_password(login_data.password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
             )
 
         # 2. Acceder al rol a través de la relación (sin consulta extra)
@@ -64,13 +71,14 @@ class AuthService:
             user_id=user.id,
             user=user,
             email=user.email,
+            username=user.username,
             role=role_name,
         )
 
     def register(self, register_data: UserCreate) -> TokenResponse:
         """Register a user."""
         user = self.user_repo.create_user(register_data)
-        return self.login(LoginRequest(username=user.username, password=user.password))
+        return self.login(LoginRequest(username=user.username, password=register_data.password))
 
     def get_current_user(self, token: str) -> User:
         """Get current user from token."""
