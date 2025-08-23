@@ -14,6 +14,12 @@ Una aplicación FastAPI para la gestión de eventos con sistema completo de test
 - ✅ Validación de datos con Pydantic
 - ✅ Sistema de autenticación JWT
 - ✅ Operaciones CRUD completas para eventos
+- ✅ Gestión de registros a eventos con control de capacidad
+- ✅ Sistema de roles y permisos (Admin, Organizador, Asistente)
+- ✅ Búsqueda avanzada de eventos
+- ✅ Estadísticas y reportes
+- ✅ Gestión de sesiones y ponentes
+- ✅ API completa con documentación Swagger
 
 ## Estructura del Proyecto
 
@@ -21,29 +27,48 @@ Una aplicación FastAPI para la gestión de eventos con sistema completo de test
 app/
 │   ├── api/
 │   │   ├── controllers/       # Controladores de endpoints
-│   │   │   └── events.py      # Endpoints de eventos
+│   │   │   ├── events_controller.py
+│   │   │   ├── auth_controller.py
+│   │   │   ├── user_controller.py
+│   │   │   ├── event_registration_controller.py
+│   │   │   ├── session_controler.py
+│   │   │   ├── speakers_controller.py
+│   │   │   └── statistics_controller.py
 │   │   └── schemas/           # Esquemas Pydantic
-│   │       └── event_schemas.py
+│   │       ├── event_schemas.py
+│   │       ├── auth_schemas.py
+│   │       ├── user_schemas.py
+│   │       ├── event_registration_schemas.py
+│   │       ├── session_schemas.py
+│   │       ├── speaker_schemas.py
+│   │       ├── statistics_schemas.py
+│   │       └── pagination_schema.py
 │   ├── core/
 │   │   ├── config.py          # Variables de entorno
-│   │   └── security.py        # Lógica de contraseñas y JWT
-│   ├── crud/
-│   │   ├── crud_event.py      # Operaciones CRUD de eventos
-│   │   ├── crud_user.py       # Operaciones CRUD de usuarios
-│   │   └── crud_register_event.py
+│   │   ├── security.py        # Lógica de contraseñas y JWT
+│   │   └── dependencies.py    # Dependencias de autenticación
 │   ├── db/
 │   │   ├── base.py            # Configuración de SQLAlchemy
 │   │   ├── models/            # Modelos de base de datos
 │   │   │   ├── event_models.py
 │   │   │   ├── user_model.py
 │   │   │   ├── rol_models.py
-│   │   │   └── event_register_models.py
+│   │   │   ├── event_register_models.py
+│   │   │   ├── session_models.py
+│   │   │   └── speaker_model.py
 │   │   └── seed_data.py       # Datos iniciales
 │   ├── services/
-│   │   └── event_service.py   # Lógica de negocio
+│   │   ├── event_service.py
+│   │   ├── auth_service.py
+│   │   ├── user_service.py
+│   │   ├── event_registration_service.py
+│   │   ├── session_service.py
+│   │   ├── speaker_service.py
+│   │   └── statistics_service.py
+│   ├── routes/
+│   │   └── api.py             # Configuración de rutas
 │   └── main.py                # Punto de entrada
 ├── tests/                     # Pruebas unitarias
-│   └── test_events.py         # Tests de eventos
 ├── alembic/                   # Migraciones
 └── requirements.txt           # Dependencias
 ```
@@ -95,9 +120,69 @@ app/
    - Actualizar `DATABASE_URL` en `.env` si es necesario
 
 7. **Ejecutar migraciones**
+
    ```bash
    alembic upgrade head
    ```
+
+8. **Ejecutar el servidor**
+
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+9. **Probar la API**
+   ```bash
+   python test_api_integration.py
+   ```
+
+## Funcionalidades Implementadas
+
+### 🔐 Autenticación y Autorización
+
+- Registro y login de usuarios con JWT
+- Sistema de roles (Admin, Organizador, Asistente)
+- Protección de rutas basada en roles
+- Gestión de perfiles de usuario
+
+### 📅 Gestión de Eventos
+
+- CRUD completo de eventos
+- Búsqueda avanzada por múltiples criterios
+- Control de capacidad y estados
+- Eventos próximos con información de disponibilidad
+- Validaciones de negocio
+
+### 👥 Registro de Asistentes
+
+- Registro de usuarios a eventos
+- Control de capacidad en tiempo real
+- Gestión de registros (actualizar, cancelar)
+- Límite de participantes por registro (1-10)
+- Prevención de registros duplicados
+
+### 📊 Estadísticas y Reportes
+
+- Dashboard administrativo con métricas
+- Estadísticas de eventos y registros
+- Top eventos por ocupación
+- Top usuarios por participación
+- Tendencias mensuales
+- Estadísticas personales de usuarios
+
+### 🎤 Gestión de Sesiones
+
+- Creación y gestión de sesiones por evento
+- Asignación de ponentes
+- Control de horarios y capacidad
+- Validación de conflictos de tiempo
+
+### 🔍 Búsqueda y Filtros
+
+- Búsqueda por título y ubicación
+- Filtros por fecha, estado y capacidad
+- Paginación en todos los endpoints
+- Ordenamiento por diferentes criterios
 
 ## Uso
 
@@ -114,16 +199,25 @@ La aplicación estará disponible en: http://localhost:8000
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-### Endpoints disponibles
+### Endpoints Principales
 
-- `GET /` - Página principal
-- `GET /health` - Health check
-- `GET /api/v1/events/` - Obtener todos los eventos
-- `GET /api/v1/events/{event_id}` - Obtener evento por ID
-- `POST /api/v1/events/` - Crear nuevo evento
-- `PUT /api/v1/events/{event_id}` - Actualizar evento
-- `DELETE /api/v1/events/{event_id}` - Eliminar evento
-- `GET /api/v1/events/search` - Buscar eventos
+| Endpoint                | Descripción             | Autenticación        |
+| ----------------------- | ----------------------- | -------------------- |
+| `/auth/register`        | Registro de usuarios    | No                   |
+| `/auth/login`           | Login de usuarios       | No                   |
+| `/events/`              | Gestión de eventos      | Sí (según operación) |
+| `/event-registrations/` | Registro a eventos      | Sí                   |
+| `/users/me`             | Perfil de usuario       | Sí                   |
+| `/statistics/`          | Estadísticas y reportes | Sí (Admin)           |
+| `/sessions/`            | Gestión de sesiones     | Sí (según operación) |
+
+### Documentación Completa
+
+Para una documentación detallada con ejemplos de uso, consulta:
+
+- **API_DOCUMENTATION.md**: Documentación completa con ejemplos
+- **Swagger UI**: http://localhost:8000/docs (interactivo)
+- **ReDoc**: http://localhost:8000/redoc (formato alternativo)
 
 ## Testing
 

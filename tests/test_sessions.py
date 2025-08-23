@@ -17,8 +17,8 @@ def sample_event(test_db: Session) -> Event:
         title="Test Conference 2024",
         description="A test conference for session testing",
         location="Test Venue",
-        start_date=datetime.now() + timedelta(days=1),
-        end_date=datetime.now() + timedelta(days=2),
+        start_date=datetime.now() + timedelta(days=30),  # Evento en el futuro
+        end_date=datetime.now() + timedelta(days=31),
         capacity=100,
         is_active=True,
     )
@@ -383,7 +383,11 @@ class TestEventSessionEndpoints:
         assert data["items"][0]["event_id"] == sample_event.id
 
     def test_create_event_session(
-        self, client: TestClient, sample_event: Event, sample_speaker: Speaker
+        self,
+        client: TestClient,
+        sample_event: Event,
+        sample_speaker: Speaker,
+        organizer_headers: dict,
     ):
         """Test creating a session for a specific event."""
         session_data = {
@@ -396,7 +400,9 @@ class TestEventSessionEndpoints:
         }
 
         response = client.post(
-            f"/api/v1/events/{sample_event.id}/sessions", json=session_data
+            f"/api/v1/events/{sample_event.id}/sessions",
+            json=session_data,
+            headers=organizer_headers,
         )
         assert response.status_code == 200
         data = response.json()

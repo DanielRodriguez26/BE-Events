@@ -8,7 +8,7 @@ from app.db.base import Base
 class Session(Base):
     __tablename__ = "sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     start_time = Column(DateTime, nullable=False)

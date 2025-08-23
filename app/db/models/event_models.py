@@ -8,7 +8,7 @@ from app.db.base import Base
 class Event(Base):
     __tablename__ = "events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     location = Column(String(255), nullable=False)

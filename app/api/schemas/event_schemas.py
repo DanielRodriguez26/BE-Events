@@ -10,11 +10,11 @@ class EventBase(BaseModel):
     start_date: datetime
     end_date: datetime
     capacity: int = 0
-    is_active: bool = True
+    is_active: Optional[bool] = True
 
 
 class EventCreate(EventBase):
-    id: Optional[int] = None
+    pass
 
 
 class EventUpdate(BaseModel):
@@ -34,3 +34,9 @@ class Event(EventBase):
 
     class Config:
         from_attributes = True
+
+
+class EventWithCapacity(Event):
+    """Esquema para eventos con información de capacidad"""
+    registered_participants: int = 0
+    available_capacity: int = 0

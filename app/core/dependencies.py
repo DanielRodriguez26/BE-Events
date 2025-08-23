@@ -22,8 +22,17 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> User:
     """Get current authenticated user."""
-    auth_service = AuthService(db)
-    return auth_service.get_current_user(credentials.credentials)
+    try:
+        auth_service = AuthService(db)
+        return auth_service.get_current_user(credentials.credentials)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

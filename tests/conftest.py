@@ -72,7 +72,7 @@ def test_db(db_session):
 @pytest.fixture
 def sample_role(db_session):
     """Create a sample role for testing."""
-    role = Role(name="user")
+    role = Role(name="assistant")
     db_session.add(role)
     db_session.commit()
     db_session.refresh(role)
@@ -83,6 +83,16 @@ def sample_role(db_session):
 def sample_admin_role(db_session):
     """Create a sample admin role for testing."""
     role = Role(name="admin")
+    db_session.add(role)
+    db_session.commit()
+    db_session.refresh(role)
+    return role
+
+
+@pytest.fixture
+def sample_organizer_role(db_session):
+    """Create a sample organizer role for testing."""
+    role = Role(name="organizer")
     db_session.add(role)
     db_session.commit()
     db_session.refresh(role)
@@ -128,6 +138,25 @@ def sample_admin_user(db_session, sample_admin_role):
 
 
 @pytest.fixture
+def sample_organizer_user(db_session, sample_organizer_role):
+    """Create a sample organizer user for testing."""
+    user = User(
+        username="organizeruser",
+        email="organizer@example.com",
+        password=get_password_hash("organizerpass123"),
+        first_name="Organizer",
+        last_name="User",
+        phone="+34 600 000 002",
+        role_id=sample_organizer_role.id,
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
 def valid_user_data(sample_role):
     """Valid user data for registration tests."""
     return {
@@ -140,3 +169,39 @@ def valid_user_data(sample_role):
         "is_active": True,
         "role_id": sample_role.id,
     }
+
+
+@pytest.fixture
+def auth_headers(sample_user, client):
+    """Get authentication headers for a test user."""
+    # Login to get token
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": sample_user.email, "password": "testpass123"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_headers(sample_admin_user, client):
+    """Get authentication headers for an admin user."""
+    # Login to get token
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": sample_admin_user.email, "password": "adminpass123"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def organizer_headers(sample_organizer_user, client):
+    """Get authentication headers for an organizer user."""
+    # Login to get token
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": sample_organizer_user.email, "password": "organizerpass123"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

@@ -8,7 +8,7 @@ from app.db.base import Base
 class Speaker(Base):
     __tablename__ = "speakers"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     bio = Column(Text, nullable=True)
     email = Column(String(255), nullable=False, unique=True)

@@ -4,37 +4,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.base import Base, engine
 
-# Import all models to ensure they are registered
+# Importar todos los modelos para asegurar que estén registrados
 from app.db.models import *
 from app.routes.api import api_router
 
-# Create FastAPI app
+# Crear aplicación FastAPI
 app = FastAPI(
     title=settings.project_name,
     debug=settings.debug,
     openapi_url=f"{settings.api_v1_str}/openapi.json",
 )
 
-# Add CORS middleware
+# Agregar middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=["*"],  # Configurar apropiadamente para producción
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API routes
+# Incluir rutas de la API
 app.include_router(api_router, prefix=settings.api_v1_str)
 
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
+    """Endpoint raíz."""
     return {"message": "Welcome to Events API", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Endpoint de verificación de salud."""
     return {"status": "healthy"}

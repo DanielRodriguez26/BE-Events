@@ -35,23 +35,32 @@ class EventRepository:
 
     def update_event(self, event_id: int, event: EventUpdate) -> Optional[Event]:
         """Update an existing event."""
-        db_event = self.get_event(event_id)
-        if db_event:
-            update_data = event.dict(exclude_unset=True)
-            for field, value in update_data.items():
-                setattr(db_event, field, value)
-            self.db.commit()
-            self.db.refresh(db_event)
-        return db_event
+        try:
+            db_event = self.get_event(event_id)
+            if db_event:
+                update_data = event.dict(exclude_unset=True)
+                for field, value in update_data.items():
+                    setattr(db_event, field, value)
+                self.db.flush()
+                self.db.refresh(db_event)
+                self.db.commit()
+            return db_event
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def delete_event(self, event_id: int) -> bool:
         """Delete an event."""
-        db_event = self.get_event(event_id)
-        if db_event:
-            self.db.delete(db_event)
-            self.db.commit()
-            return True
-        return False
+        try:
+            db_event = self.get_event(event_id)
+            if db_event:
+                self.db.delete(db_event)
+                self.db.commit()
+                return True
+            return False
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def search_events(
         self,

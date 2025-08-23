@@ -5,11 +5,16 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session as DBSession
 
-from app.api.schemas.event_schemas import Event, EventCreate, EventUpdate
+from app.api.schemas.event_schemas import (
+    Event,
+    EventCreate,
+    EventUpdate,
+    EventWithCapacity,
+)
 from app.api.schemas.pagination_schema import Page
 from app.api.schemas.session_schemas import Session as SessionSchema
 from app.api.schemas.session_schemas import SessionCreate, SessionCreateForEvent
-from app.core.dependencies import require_admin, require_organizer
+from app.core.dependencies import get_current_user, require_admin, require_organizer
 from app.db.base import get_db
 from app.db.models import User
 from app.services.event_service import EventService
@@ -41,7 +46,7 @@ async def get_all_events(
 
 
 @router.get(
-    "/search", response_model=List[Event], summary="Search events by multiple criteria"
+    "/search", response_model=Page[Event], summary="Search events by multiple criteria"
 )
 async def search_events(
     title: Optional[str] = Query(None, description="Search by title or part of title"),
@@ -74,18 +79,26 @@ async def search_events(
         # Convert date strings to datetime objects
         parsed_date_from = None
         parsed_date_to = None
-        
+
         if date_from and date_from.strip():
             try:
-                parsed_date_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                parsed_date_from = datetime.fromisoformat(
+                    date_from.replace("Z", "+00:00")
+                )
             except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS")
-        
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid date_from format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS",
+                )
+
         if date_to and date_to.strip():
             try:
-                parsed_date_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
             except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid date_to format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS",
+                )
 
         # Calculate skip based on page and size
         skip = (page - 1) * size
@@ -97,6 +110,7 @@ async def search_events(
             is_active=is_active,
             date_from=parsed_date_from,
             date_to=parsed_date_to,
+            page=page,
             skip=skip,
             limit=size,
         )
@@ -126,11 +140,74 @@ async def get_event_by_id(event_id: int, db: DBSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@router.get(
+    "/upcoming/with-capacity",
+    response_model=Page[EventWithCapacity],
+    summary="Get upcoming events with capacity info",
+)
+async def get_upcoming_events_with_capacity(
+    page: int = Query(1, ge=1, description="Page number to retrieve"),
+    size: int = Query(20, ge=1, le=100, description="Number of events per page"),
+    db: DBSession = Depends(get_db),
+):
+    """
+    Retrieve upcoming events with capacity information and pagination.
+
+    Returns events that:
+    - Are active
+    - Have a future date
+    - Include capacity information
+
+    - **page**: Page number to retrieve (starts at 1)
+    - **size**: Number of events per page (max 100)
+    """
+    try:
+        event_service = EventService(db)
+        skip = (page - 1) * size
+        events = event_service.get_upcoming_events_with_capacity(
+            skip=skip, page=page, limit=size
+        )
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get(
+    "/with-capacity",
+    response_model=Page[EventWithCapacity],
+    summary="Get all events with capacity info",
+)
+async def get_all_events_with_capacity(
+    page: int = Query(1, ge=1, description="Page number to retrieve"),
+    size: int = Query(20, ge=1, le=100, description="Number of events per page"),
+    db: DBSession = Depends(get_db),
+):
+    """
+    Retrieve all events with capacity information and pagination.
+
+    Returns events that:
+    - Are active
+    - Include capacity information
+
+    - **page**: Page number to retrieve (starts at 1)
+    - **size**: Number of events per page (max 100)
+    """
+    try:
+        event_service = EventService(db)
+        skip = (page - 1) * size
+        events = event_service.get_all_events_with_capacity(
+            skip=skip, page=page, limit=size
+        )
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
 @router.post("/", response_model=Event, summary="Create new event")
 async def create_event(
     event: EventCreate,
     db: DBSession = Depends(get_db),
-    # current_user: User = Depends(require_organizer)
+    # current_user: User = Depends(get_current_user),
 ):
     """
     Create a new event.
@@ -154,7 +231,7 @@ async def update_event(
     event_id: int,
     event: EventUpdate,
     db: DBSession = Depends(get_db),
-    # current_user: User = Depends(require_organizer),
+    current_user: User = Depends(require_organizer),
 ):
     """
     Update an existing event.
@@ -182,7 +259,7 @@ async def update_event(
 async def delete_event(
     event_id: int,
     db: DBSession = Depends(get_db),
-    # current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Delete an event permanently.
@@ -244,7 +321,7 @@ async def create_event_session(
     event_id: int,
     session: SessionCreateForEvent,
     db: DBSession = Depends(get_db),
-    # current_user: User = Depends(require_organizer)
+    current_user: User = Depends(require_organizer),
 ):
     """
     Create a new session for a specific event.

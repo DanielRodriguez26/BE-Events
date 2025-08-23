@@ -29,13 +29,13 @@ class UserCreate(UserBase):
     confirm_password: str
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
 
 
 class UserUpdate(BaseModel):
-    email: str
-    username: str
-    password: str
-    first_name: str
-    last_name: str
-    is_active: bool = True
+    email: Optional[str] = None
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    is_active: Optional[bool] = None

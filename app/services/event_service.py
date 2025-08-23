@@ -1,5 +1,5 @@
-from datetime import datetime
 import math
+from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -14,17 +14,20 @@ from app.services.validators.event_validators import (
 
 
 class EventService:
+    """Servicio para gestionar eventos con lógica de negocio"""
+
     def __init__(self, db: Session):
+        """Inicializa el servicio con la sesión de base de datos"""
         self.db = db
         self.event_repository = EventRepository(db)
 
-    def get_all_events(self, skip: int = 0,page: int =1, limit: int = 100) ->Page:
+    def get_all_events(self, skip: int = 0, page: int = 1, limit: int = 100) -> Page:
         """Get all events with business logic validation."""
         events = self.event_repository.get_all_events(skip=skip, limit=limit)
         eventList = [Event.model_validate(event) for event in events]
         total_events = self.event_repository.get_events_count()
         total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
-        
+
         return Page(
             items=eventList,
             page=page,
@@ -77,9 +80,10 @@ class EventService:
         is_active: Optional[bool] = None,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
+        page: int = 1,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Event]:
+    ) -> Page[Event]:
         """Search events by multiple criteria with business logic validation."""
 
         events = self.event_repository.search_events(
@@ -91,4 +95,197 @@ class EventService:
             skip=skip,
             limit=limit,
         )
-        return [Event.model_validate(event) for event in events]
+        eventList = [Event.model_validate(event) for event in events]
+        total_events = len(eventList)
+        total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
+
+        return Page(
+            items=eventList,
+            page=page,
+            size=limit,
+            total_items=total_events,
+            total_pages=total_pages,
+        )
+
+    def get_all_events_with_capacity(
+        self, skip: int = 0, page: int = 1, limit: int = 100
+    ) -> Page:
+        """Get all events with capacity information."""
+        from app.api.schemas.event_schemas import EventWithCapacity
+
+        events = self.event_repository.get_all_events(skip=skip, limit=limit)
+        total_events = self.event_repository.get_events_count()
+        total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
+
+        # Convert to EventWithCapacity
+        events_with_capacity = []
+        for event in events:
+            # Get registration count for this event
+            from sqlalchemy import func
+
+            from app.db.models.event_register_models import EventRegistration
+
+            registration_count = (
+                self.db.query(func.sum(EventRegistration.number_of_participants))
+                .filter(EventRegistration.event_id == event.id)
+                .scalar()
+                or 0
+            )
+
+            event_dict = Event.model_validate(event).dict()
+            event_dict.update(
+                {
+                    "registered_participants": registration_count,
+                    "available_capacity": event.capacity - registration_count,
+                }
+            )
+            events_with_capacity.append(EventWithCapacity(**event_dict))
+
+        return Page(
+            items=events_with_capacity,
+            page=page,
+            size=limit,
+            total_items=total_events,
+            total_pages=total_pages,
+        )
+
+    def get_event_by_id_with_capacity(self, event_id: int):
+        """Get event by ID with capacity information."""
+        from app.api.schemas.event_schemas import EventWithCapacity
+
+        event = self.event_repository.get_event(event_id)
+        if not event:
+            return None
+
+        # Obtener conteo de registros para este evento
+        from sqlalchemy import func
+
+        from app.db.models.event_register_models import EventRegistration
+
+        registration_count = (
+            self.db.query(func.sum(EventRegistration.number_of_participants))
+            .filter(EventRegistration.event_id == event.id)
+            .scalar()
+            or 0
+        )
+
+        event_dict = Event.model_validate(event).dict()
+        event_dict.update(
+            {
+                "registered_participants": registration_count,
+                "available_capacity": event.capacity - registration_count,
+            }
+        )
+
+        return EventWithCapacity(**event_dict)
+
+    def search_events_with_capacity(
+        self,
+        title: Optional[str] = None,
+        location: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        page: int = 1,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> Page:
+        """Search events by multiple criteria with capacity information."""
+        from app.api.schemas.event_schemas import EventWithCapacity
+
+        events = self.event_repository.search_events(
+            title=title,
+            location=location,
+            is_active=is_active,
+            date_from=date_from,
+            date_to=date_to,
+            skip=skip,
+            limit=limit,
+        )
+
+        # Convert to EventWithCapacity
+        events_with_capacity = []
+        for event in events:
+            # Get registration count for this event
+            from sqlalchemy import func
+
+            from app.db.models.event_register_models import EventRegistration
+
+            registration_count = (
+                self.db.query(func.sum(EventRegistration.number_of_participants))
+                .filter(EventRegistration.event_id == event.id)
+                .scalar()
+                or 0
+            )
+
+            event_dict = Event.model_validate(event).dict()
+            event_dict.update(
+                {
+                    "registered_participants": registration_count,
+                    "available_capacity": event.capacity - registration_count,
+                }
+            )
+            events_with_capacity.append(EventWithCapacity(**event_dict))
+
+        # Get total count for pagination
+        total_events = self.event_repository.get_events_count()
+        total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
+
+        return Page(
+            items=events_with_capacity,
+            page=page,
+            size=limit,
+            total_items=total_events,
+            total_pages=total_pages,
+        )
+
+    def get_upcoming_events_with_capacity(
+        self, skip: int = 0, page: int = 1, limit: int = 100
+    ) -> Page:
+        """Get upcoming events with capacity information."""
+        from sqlalchemy import and_, func
+
+        from app.api.schemas.event_schemas import EventWithCapacity
+        from app.db.models.event_models import Event
+        from app.db.models.event_register_models import EventRegistration
+
+        now = datetime.utcnow()
+
+        # Consultar eventos próximos
+        query = (
+            self.db.query(Event)
+            .filter(and_(Event.start_date > now, Event.is_active == True))
+            .order_by(Event.start_date.asc())
+        )
+
+        total_events = query.count()
+        events = query.offset(skip).limit(limit).all()
+
+        # Convertir a EventWithCapacity
+        events_with_capacity = []
+        for event in events:
+            registration_count = (
+                self.db.query(func.sum(EventRegistration.number_of_participants))
+                .filter(EventRegistration.event_id == event.id)
+                .scalar()
+                or 0
+            )
+
+            event_dict = Event.model_validate(event).dict()
+            event_dict.update(
+                {
+                    "registered_participants": registration_count,
+                    "available_capacity": event.capacity - registration_count,
+                }
+            )
+            events_with_capacity.append(EventWithCapacity(**event_dict))
+
+        total_pages = math.ceil(total_events / limit) if total_events > 0 else 1
+
+        return Page(
+            items=events_with_capacity,
+            page=page,
+            size=limit,
+            total_items=total_events,
+            total_pages=total_pages,
+        )

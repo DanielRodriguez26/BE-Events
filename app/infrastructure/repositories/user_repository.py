@@ -51,5 +51,6 @@ class UserRepository:
         user_new = User(**user_dict)
         self.db.add(user_new)
         self.db.commit()
-        self.db.refresh(user_new)
+        self.db.refresh(user_new) 
+        
         return user_new

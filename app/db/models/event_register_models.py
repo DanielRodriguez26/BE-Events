@@ -7,7 +7,7 @@ from app.db.base import Base
 class EventRegistration(Base):
     __tablename__ = "event_registrations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     number_of_participants = Column(Integer, nullable=False)
