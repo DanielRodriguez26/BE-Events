@@ -130,13 +130,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event, sample_speaker: Speaker
     ):
         """Test creating a session successfully."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Advanced Python",
             "description": "Advanced Python programming concepts",
             "event_id": sample_event.id,
             "speaker_id": sample_speaker.id,
-            "start_time": (sample_event.start_date + timedelta(hours=3)).isoformat(),
-            "end_time": (sample_event.start_date + timedelta(hours=4)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 30,
         }
 
@@ -152,12 +157,17 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event
     ):
         """Test creating a session without assigning a speaker."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=30, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Open Discussion",
             "description": "Open discussion session",
             "event_id": sample_event.id,
-            "start_time": (sample_event.start_date + timedelta(hours=5)).isoformat(),
-            "end_time": (sample_event.start_date + timedelta(hours=6)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 100,
         }
 
@@ -170,13 +180,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_speaker: Speaker
     ):
         """Test creating a session with non-existent event."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Test Session",
             "description": "Test description",
             "event_id": 999,  # Non-existent event
             "speaker_id": sample_speaker.id,
-            "start_time": datetime.now().isoformat(),
-            "end_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 50,
         }
 
@@ -188,13 +203,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event
     ):
         """Test creating a session with non-existent speaker."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Test Session",
             "description": "Test description",
             "event_id": sample_event.id,
             "speaker_id": 999,  # Non-existent speaker
-            "start_time": (sample_event.start_date + timedelta(hours=1)).isoformat(),
-            "end_time": (sample_event.start_date + timedelta(hours=2)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 50,
         }
 
@@ -206,15 +226,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event, sample_speaker: Speaker
     ):
         """Test creating a session outside the event date range."""
+        # Asegurar que las horas estén en intervalos de 30 minutos
+        outside_time = sample_event.end_date + timedelta(days=1)
+        start_time = outside_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Test Session",
             "description": "Test description",
             "event_id": sample_event.id,
             "speaker_id": sample_speaker.id,
-            "start_time": (sample_event.end_date + timedelta(days=1)).isoformat(),
-            "end_time": (
-                sample_event.end_date + timedelta(days=1, hours=1)
-            ).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 50,
         }
 
@@ -234,15 +257,18 @@ class TestSessionCreateOperations:
     ):
         """Test creating a session with schedule conflict."""
         # Try to create a session that overlaps with the existing one
+        # Asegurar que las horas estén en intervalos de 30 minutos
+        start_time = sample_session.start_time + timedelta(minutes=30)
+        start_time = start_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Conflicting Session",
             "description": "This should conflict",
             "event_id": sample_event.id,
             "speaker_id": sample_speaker.id,
-            "start_time": (
-                sample_session.start_time + timedelta(minutes=30)
-            ).isoformat(),
-            "end_time": (sample_session.end_time + timedelta(minutes=30)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 50,
         }
 
@@ -254,15 +280,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event, sample_speaker: Speaker
     ):
         """Test creating a session with invalid time range."""
+        # Asegurar que las horas estén en intervalos de 30 minutos
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time - timedelta(hours=1)  # End before start
+        
         session_data = {
             "title": "Invalid Time Session",
             "description": "End time before start time",
             "event_id": sample_event.id,
             "speaker_id": sample_speaker.id,
-            "start_time": (sample_event.start_date + timedelta(hours=2)).isoformat(),
-            "end_time": (
-                sample_event.start_date + timedelta(hours=1)
-            ).isoformat(),  # End before start
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),  # End before start
             "capacity": 50,
         }
 
@@ -273,13 +302,18 @@ class TestSessionCreateOperations:
         self, client: TestClient, sample_event: Event, sample_speaker: Speaker
     ):
         """Test creating a session with negative capacity."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Negative Capacity Session",
             "description": "Test negative capacity",
             "event_id": sample_event.id,
             "speaker_id": sample_speaker.id,
-            "start_time": (sample_event.start_date + timedelta(hours=7)).isoformat(),
-            "end_time": (sample_event.start_date + timedelta(hours=8)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": -10,
         }
 
@@ -340,11 +374,14 @@ class TestSessionUpdateOperations:
         db.commit()
 
         # Try to update the first session to conflict with the second
+        # Asegurar que las horas estén en intervalos de 30 minutos
+        start_time = other_session.start_time + timedelta(minutes=30)
+        start_time = start_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         update_data = {
-            "start_time": (
-                other_session.start_time + timedelta(minutes=30)
-            ).isoformat(),
-            "end_time": (other_session.end_time + timedelta(minutes=30)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
         }
 
         response = client.put(f"/api/v1/sessions/{sample_session.id}", json=update_data)
@@ -390,12 +427,17 @@ class TestEventSessionEndpoints:
         organizer_headers: dict,
     ):
         """Test creating a session for a specific event."""
+        # Asegurar que las horas estén en intervalos de 30 minutos y en el futuro
+        future_time = datetime.now() + timedelta(days=1)
+        start_time = future_time.replace(minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(hours=1)
+        
         session_data = {
             "title": "Event Session",
             "description": "Session created via event endpoint",
             "speaker_id": sample_speaker.id,
-            "start_time": (sample_event.start_date + timedelta(hours=9)).isoformat(),
-            "end_time": (sample_event.start_date + timedelta(hours=10)).isoformat(),
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
             "capacity": 40,
         }
 

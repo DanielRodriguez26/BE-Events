@@ -177,7 +177,7 @@ def auth_headers(sample_user, client):
     # Login to get token
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": sample_user.email, "password": "testpass123"},
+        json={"username": sample_user.username, "password": "testpass123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -189,7 +189,7 @@ def admin_headers(sample_admin_user, client):
     # Login to get token
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": sample_admin_user.email, "password": "adminpass123"},
+        json={"username": sample_admin_user.username, "password": "adminpass123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -201,7 +201,10 @@ def organizer_headers(sample_organizer_user, client):
     # Login to get token
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": sample_organizer_user.email, "password": "organizerpass123"},
+        json={
+            "username": sample_organizer_user.username,
+            "password": "organizerpass123",
+        },
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

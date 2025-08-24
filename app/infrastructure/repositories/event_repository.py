@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas.event_schemas import EventCreate, EventUpdate
 from app.db.models import Event
+from app.db.models.event_register_models import (
+    EventRegistration as EventRegistrationModel,
+)
 
 
 class EventRepository:
     def __init__(self, db: Session):
         self.db = db
         self.event_model = Event
+        self.event_registration_model = EventRegistrationModel
 
     def get_event(self, event_id: int) -> Optional[Event]:
         """Get a single event by ID."""
@@ -110,3 +114,24 @@ class EventRepository:
 
         # Apply pagination
         return query.offset(skip).limit(limit).all()
+
+    def get_event_registrations(self, event_id: int) -> Optional[Event]:
+        """Get all registrations for an event."""
+        return (
+            self.db.query(Event)
+            .filter(Event.id == event_id, Event.is_active == True)
+            .first()
+        )
+        
+    def create_event_registration(self, event_registration: EventRegistrationModel) -> EventRegistrationModel:
+        # Crear el registro
+        new_registration = self.event_registration_model(
+            event_id=event_registration.event_id,
+            user_id=event_registration.user_id,
+            number_of_participants=event_registration.number_of_participants,
+        )
+
+        self.db.add(new_registration)
+        self.db.commit()
+        self.db.refresh(new_registration)
+        return new_registration

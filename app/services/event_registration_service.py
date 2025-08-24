@@ -19,6 +19,7 @@ from app.db.models.user_model import User
 from app.infrastructure.repositories.event_registration_repository import (
     EventRegistrationRepository,
 )
+from app.infrastructure.repositories.event_repository import EventRepository
 
 
 class EventRegistrationService:
@@ -26,6 +27,7 @@ class EventRegistrationService:
 
     def __init__(self, db: Session):
         self.event_registration_repository = EventRegistrationRepository(db)
+        self.event_repository = EventRepository(db)
         """Inicializa el servicio con la sesión de base de datos"""
         self.db = db
 
@@ -46,12 +48,8 @@ class EventRegistrationService:
             ValueError: Si el evento no existe, no hay capacidad, o el usuario ya está registrado
         """
         # Verificar que el evento existe y está activo
-        event = (
-            self.db.query(Event)
-            .filter(
-                and_(Event.id == registration_data.event_id, Event.is_active == True)
-            )
-            .first()
+        event = self.event_repository.get_event_registrations(
+            registration_data.event_id
         )
 
         if not event:
@@ -59,14 +57,9 @@ class EventRegistrationService:
 
         # Verificar que el usuario no esté ya registrado
         existing_registration = (
-            self.db.query(EventRegistrationModel)
-            .filter(
-                and_(
-                    EventRegistrationModel.event_id == registration_data.event_id,
-                    EventRegistrationModel.user_id == user_id,
-                )
+            self.event_registration_repository.get_user_is_registered(
+                user_id, registration_data.event_id
             )
-            .first()
         )
 
         if existing_registration:
@@ -74,10 +67,9 @@ class EventRegistrationService:
 
         # Verificar capacidad disponible
         current_registrations = (
-            self.db.query(func.sum(EventRegistrationModel.number_of_participants))
-            .filter(EventRegistrationModel.event_id == registration_data.event_id)
-            .scalar()
-            or 0
+            self.event_registration_repository.get_capacity_available(
+                registration_data.event_id
+            )
         )
 
         available_capacity = event.capacity - current_registrations
@@ -88,17 +80,13 @@ class EventRegistrationService:
                 f"Solicitado: {registration_data.number_of_participants}"
             )
 
-        # Crear el registro
-        new_registration = EventRegistrationModel(
-            event_id=registration_data.event_id,
-            user_id=user_id,
-            number_of_participants=registration_data.number_of_participants,
+        new_registration = self.event_repository.create_event_registration(
+            EventRegistrationModel(
+                event_id=registration_data.event_id,
+                user_id=user_id,
+                number_of_participants=registration_data.number_of_participants,
+            )
         )
-
-        self.db.add(new_registration)
-        self.db.commit()
-        self.db.refresh(new_registration)
-
         return EventRegistration.from_orm(new_registration)
 
     def get_user_registrations(
@@ -124,9 +112,11 @@ class EventRegistrationService:
                     "number_of_participants": reg.number_of_participants,
                     "created_at": reg.created_at,
                     "updated_at": reg.updated_at,
-                    "event_title": reg.event.title,
-                    "event_date": reg.event.start_date,
-                    "event_location": reg.event.location,
+                    "title": reg.event.title,
+                    "date": reg.event.start_date,
+                    "location": reg.event.location,
+                    "start_date": reg.event.start_date,
+                    "end_date": reg.event.end_date,
                 }
                 registration_schemas.append(
                     EventRegistrationWithEvent(**registration_data)

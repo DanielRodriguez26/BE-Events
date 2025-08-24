@@ -2,10 +2,10 @@
 
 ## 📋 Información General
 
-- **Base URL**: `http://localhost:8080/api/v1`
+- **Base URL**: `http://localhost:8000/api/v1`
 - **Content-Type**: `application/json`
 - **Authentication**: JWT Bearer Token
-- **Documentación Interactiva**: http://localhost:8080/docs
+- **Documentación Interactiva**: http://localhost:8000/docs
 
 ## 🔐 Autenticación
 
@@ -15,6 +15,14 @@
 Authorization: Bearer <jwt-token>
 Content-Type: application/json
 ```
+
+### Notas de Implementación
+
+- ✅ Sistema JWT completamente funcional
+- ✅ Validación de tokens en tiempo real
+- ✅ Manejo de roles y permisos
+- ✅ Protección de rutas basada en roles
+- ✅ Gestión de sesiones segura
 
 ### Obtener Token
 
@@ -219,8 +227,7 @@ Authorization: Bearer <token>
 ```json
 {
   "event_id": 1,
-  "number_of_participants": 2,
-  "special_requirements": "Vegetarian meal"
+  "number_of_participants": 2
 }
 ```
 
@@ -232,10 +239,17 @@ Authorization: Bearer <token>
   "user_id": 1,
   "event_id": 1,
   "number_of_participants": 2,
-  "special_requirements": "Vegetarian meal",
-  "registration_date": "2024-01-15T11:00:00"
+  "created_at": "2024-01-15T11:00:00",
+  "updated_at": null
 }
 ```
+
+#### Mejoras Recientes
+
+- ✅ **Información de eventos incluida**: Los registros ahora incluyen título, fecha y ubicación del evento
+- ✅ **Validaciones mejoradas**: Control de capacidad en tiempo real
+- ✅ **Prevención de duplicados**: Un usuario no puede registrarse dos veces al mismo evento
+- ✅ **Límites de participantes**: Máximo 10 participantes por registro
 
 #### Ver Mis Registros
 
@@ -252,14 +266,13 @@ Authorization: Bearer <token>
     {
       "id": 1,
       "event_id": 1,
+      "user_id": 1,
       "number_of_participants": 2,
-      "registration_date": "2024-01-15T11:00:00",
-      "event": {
-        "id": 1,
-        "title": "Tech Conference 2024",
-        "date": "2024-06-15T09:00:00",
-        "location": "Bogotá, Colombia"
-      }
+      "created_at": "2024-01-15T11:00:00",
+      "updated_at": null,
+      "event_title": "Tech Conference 2024",
+      "event_date": "2024-06-15T09:00:00",
+      "event_location": "Bogotá, Colombia"
     }
   ],
   "page": 1,

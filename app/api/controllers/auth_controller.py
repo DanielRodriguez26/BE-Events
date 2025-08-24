@@ -21,6 +21,8 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     try:
         auth_service = AuthService(db)
         return auth_service.login(login_data)
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:

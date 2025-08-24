@@ -30,7 +30,8 @@ class TestEvents:
             json={
                 "title": "Test Event",
                 "description": "Test Description",
-                "date": "2024-06-15T09:00:00",
+                "start_date": "2024-06-15T09:00:00",
+                "end_date": "2024-06-15T17:00:00",
                 "location": "Test Location",
                 "capacity": 100,
                 "is_active": True,
@@ -119,7 +120,9 @@ class TestEvents:
         response = client.get("/api/v1/events/search?title=test")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
+        assert isinstance(data, dict)
+        assert "items" in data
+        assert isinstance(data["items"], list)
 
     def test_get_upcoming_events(self, client: TestClient):
         """Test getting upcoming events."""

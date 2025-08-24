@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session as DBSession
 
 from app.api.schemas.event_schemas import (
@@ -15,6 +15,12 @@ from app.api.schemas.pagination_schema import Page
 from app.api.schemas.session_schemas import Session as SessionSchema
 from app.api.schemas.session_schemas import SessionCreate, SessionCreateForEvent
 from app.core.dependencies import get_current_user, require_admin, require_organizer
+from app.core.exceptions import (
+    NotFoundException,
+    ServerException,
+    ValidationException,
+    create_validation_error,
+)
 from app.db.base import get_db
 from app.db.models import User
 from app.services.event_service import EventService
@@ -122,7 +128,9 @@ async def search_events(
 
 
 @router.get("/{event_id}", response_model=Event, summary="Get event by ID")
-async def get_event_by_id(event_id: int, db: DBSession = Depends(get_db)):
+async def get_event_by_id(
+    event_id: int, db: DBSession = Depends(get_db), request: Request = None
+):
     """
     Retrieve a specific event by its ID.
 
@@ -132,12 +140,20 @@ async def get_event_by_id(event_id: int, db: DBSession = Depends(get_db)):
         event_service = EventService(db)
         event = event_service.get_event_by_id(event_id)
         if not event:
-            raise HTTPException(status_code=404, detail="Event not found")
+            raise NotFoundException(
+                message="Evento no encontrado",
+                path=str(request.url.path) if request else None,
+                method=request.method if request else None,
+            )
         return event
-    except HTTPException:
+    except (NotFoundException, ValidationException, ServerException):
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise ServerException(
+            message=f"Error interno del servidor: {str(e)}",
+            path=str(request.url.path) if request else None,
+            method=request.method if request else None,
+        )
 
 
 @router.get(
@@ -207,7 +223,7 @@ async def get_all_events_with_capacity(
 async def create_event(
     event: EventCreate,
     db: DBSession = Depends(get_db),
-    # current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new event.

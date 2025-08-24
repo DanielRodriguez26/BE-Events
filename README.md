@@ -20,6 +20,8 @@ Una aplicación FastAPI para la gestión de eventos con sistema completo de test
 - ✅ Estadísticas y reportes
 - ✅ Gestión de sesiones y ponentes
 - ✅ API completa con documentación Swagger
+- ✅ Arquitectura en capas con repositorios
+- ✅ Validaciones de negocio robustas
 
 ## Estructura del Proyecto
 
@@ -57,14 +59,25 @@ app/
 │   │   │   ├── session_models.py
 │   │   │   └── speaker_model.py
 │   │   └── seed_data.py       # Datos iniciales
-│   ├── services/
+│   ├── infrastructure/        # Capa de infraestructura
+│   │   ├── repositories/      # Repositorios de datos
+│   │   │   ├── event_repository.py
+│   │   │   ├── user_repository.py
+│   │   │   ├── event_registration_repository.py
+│   │   │   ├── session_repository.py
+│   │   │   └── speaker_repository.py
+│   │   └── cache/             # Sistema de caché
+│   ├── services/              # Lógica de negocio
 │   │   ├── event_service.py
 │   │   ├── auth_service.py
 │   │   ├── user_service.py
 │   │   ├── event_registration_service.py
 │   │   ├── session_service.py
 │   │   ├── speaker_service.py
-│   │   └── statistics_service.py
+│   │   ├── statistics_service.py
+│   │   └── validators/        # Validadores de negocio
+│   │       ├── event_validators.py
+│   │       └── user_validate.py
 │   ├── routes/
 │   │   └── api.py             # Configuración de rutas
 │   └── main.py                # Punto de entrada
@@ -140,49 +153,60 @@ app/
 
 ### 🔐 Autenticación y Autorización
 
-- Registro y login de usuarios con JWT
-- Sistema de roles (Admin, Organizador, Asistente)
-- Protección de rutas basada en roles
-- Gestión de perfiles de usuario
+- ✅ Registro y login de usuarios con JWT
+- ✅ Sistema de roles (Admin, Organizador, Asistente)
+- ✅ Protección de rutas basada en roles
+- ✅ Gestión de perfiles de usuario
+- ✅ Validación de tokens y manejo de sesiones
 
 ### 📅 Gestión de Eventos
 
-- CRUD completo de eventos
-- Búsqueda avanzada por múltiples criterios
-- Control de capacidad y estados
-- Eventos próximos con información de disponibilidad
-- Validaciones de negocio
+- ✅ CRUD completo de eventos
+- ✅ Búsqueda avanzada por múltiples criterios
+- ✅ Control de capacidad y estados
+- ✅ Eventos próximos con información de disponibilidad
+- ✅ Validaciones de negocio robustas
+- ✅ Prevención de eventos duplicados
 
 ### 👥 Registro de Asistentes
 
-- Registro de usuarios a eventos
-- Control de capacidad en tiempo real
-- Gestión de registros (actualizar, cancelar)
-- Límite de participantes por registro (1-10)
-- Prevención de registros duplicados
+- ✅ Registro de usuarios a eventos
+- ✅ Control de capacidad en tiempo real
+- ✅ Gestión de registros (actualizar, cancelar)
+- ✅ Límite de participantes por registro (1-10)
+- ✅ Prevención de registros duplicados
+- ✅ Información de eventos incluida en registros
 
 ### 📊 Estadísticas y Reportes
 
-- Dashboard administrativo con métricas
-- Estadísticas de eventos y registros
-- Top eventos por ocupación
-- Top usuarios por participación
-- Tendencias mensuales
-- Estadísticas personales de usuarios
+- ✅ Dashboard administrativo con métricas
+- ✅ Estadísticas de eventos y registros
+- ✅ Top eventos por ocupación
+- ✅ Top usuarios por participación
+- ✅ Tendencias mensuales
+- ✅ Estadísticas personales de usuarios
 
 ### 🎤 Gestión de Sesiones
 
-- Creación y gestión de sesiones por evento
-- Asignación de ponentes
-- Control de horarios y capacidad
-- Validación de conflictos de tiempo
+- ✅ Creación y gestión de sesiones por evento
+- ✅ Asignación de ponentes
+- ✅ Control de horarios y capacidad
+- ✅ Validación de conflictos de tiempo
 
 ### 🔍 Búsqueda y Filtros
 
-- Búsqueda por título y ubicación
-- Filtros por fecha, estado y capacidad
-- Paginación en todos los endpoints
-- Ordenamiento por diferentes criterios
+- ✅ Búsqueda por título y ubicación
+- ✅ Filtros por fecha, estado y capacidad
+- ✅ Paginación en todos los endpoints
+- ✅ Ordenamiento por diferentes criterios
+
+### 🏗️ Arquitectura y Infraestructura
+
+- ✅ Arquitectura en capas (Controllers → Services → Repositories)
+- ✅ Repositorios para acceso a datos
+- ✅ Validadores de negocio separados
+- ✅ Manejo de errores centralizado
+- ✅ Configuración centralizada
 
 ## Uso
 
@@ -216,6 +240,7 @@ La aplicación estará disponible en: http://localhost:8000
 Para una documentación detallada con ejemplos de uso, consulta:
 
 - **API_DOCUMENTATION.md**: Documentación completa con ejemplos
+- **CHANGELOG.md**: Historial de cambios y mejoras recientes
 - **Swagger UI**: http://localhost:8000/docs (interactivo)
 - **ReDoc**: http://localhost:8000/redoc (formato alternativo)
 
@@ -310,15 +335,43 @@ python -c "from app.db.base import Base; from app.db.models import *; from sqlal
 - **python-jose**: Manejo de JWT
 - **passlib**: Hashing de contraseñas
 
+## Arquitectura del Proyecto
+
+### Patrón de Capas
+
+```
+┌─────────────────┐
+│   Controllers   │ ← API Endpoints
+├─────────────────┤
+│    Services     │ ← Lógica de Negocio
+├─────────────────┤
+│  Repositories   │ ← Acceso a Datos
+├─────────────────┤
+│     Models      │ ← Modelos de BD
+└─────────────────┘
+```
+
+### Características de la Arquitectura
+
+- **Separación de responsabilidades**: Cada capa tiene una función específica
+- **Inyección de dependencias**: Uso de FastAPI Depends para gestión de dependencias
+- **Repositorios**: Abstracción del acceso a datos para facilitar testing
+- **Validadores**: Lógica de validación de negocio separada
+- **Manejo de errores**: Centralizado y consistente en toda la aplicación
+
 ## Estado del proyecto
 
 - ✅ **API completa**: CRUD de eventos implementado
-- ✅ **Tests completos**: 25 tests pasando
-- ✅ **Validaciones**: Fechas, capacidad, duplicados
+- ✅ **Tests completos**: 25+ tests pasando
+- ✅ **Validaciones**: Fechas, capacidad, duplicados, negocio
 - ✅ **Documentación**: Swagger/OpenAPI automática
 - ✅ **Base de datos**: Migraciones y seed data
-- 🔄 **Autenticación**: Sistema JWT en desarrollo
-- 🔄 **Usuarios**: CRUD de usuarios en desarrollo
+- ✅ **Autenticación**: Sistema JWT completamente funcional
+- ✅ **Usuarios**: CRUD de usuarios implementado
+- ✅ **Registros**: Sistema de registro a eventos con validaciones
+- ✅ **Arquitectura**: Capa de infraestructura con repositorios
+- ✅ **Sesiones**: Gestión de sesiones y ponentes
+- ✅ **Estadísticas**: Sistema de reportes y métricas
 
 ## Contribución
 

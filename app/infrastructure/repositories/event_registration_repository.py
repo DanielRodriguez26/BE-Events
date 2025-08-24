@@ -1,4 +1,4 @@
-from sqlalchemy import func
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.models.event_register_models import (
@@ -38,3 +38,23 @@ class EventRegistrationRepository:
 
     def get_count_registrations(self):
         return self.db.query(func.count(self.event_registration_model.id)).scalar() or 0
+    
+    def get_user_is_registered(self, user_id: int, event_id: int):
+        return (
+            self.db.query(EventRegistrationModel)
+            .filter(
+                and_(
+                    EventRegistrationModel.event_id ==event_id,
+                    EventRegistrationModel.user_id == user_id,
+                )
+            )
+            .first()
+        )
+        
+    def get_capacity_available(self, event_id: int):
+        return (
+            self.db.query(func.sum(EventRegistrationModel.number_of_participants))
+            .filter(EventRegistrationModel.event_id == event_id)
+            .scalar()
+            or 0
+        )

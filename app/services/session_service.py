@@ -1,6 +1,6 @@
 import math
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.infrastructure.repositories.session_repository import SessionRepository
 from app.db.models import Session as SessionModel
@@ -44,7 +44,64 @@ class SessionService:
         if session:
             return SessionSchema.model_validate(session)
         return None
-    
+
+    def _validate_session_schedule(self, session_data: SessionCreate, event_start: datetime, event_end: datetime) -> None:
+        """Validaciones adicionales de horarios para sesiones"""
+        
+        # Validación 1: Verificar que el evento existe
+        if not event_start or not event_end:
+            raise ValueError("Event dates are required")
+        
+        # Validación 2: Verificar que el horario está dentro del rango del evento
+        if session_data.start_time < event_start or session_data.end_time > event_end:
+            raise ValueError("Session schedule must be within the event's date range")
+        
+        # Validación 3: Verificar que la sesión no empiece antes del evento
+        if session_data.start_time < event_start:
+            raise ValueError("Session cannot start before the event")
+        
+        # Validación 4: Verificar que la sesión no termine después del evento
+        if session_data.end_time > event_end:
+            raise ValueError("Session cannot end after the event")
+        
+        # Validación 5: Verificar que no hay sesiones en horarios no laborables (opcional)
+        # Solo permitir sesiones entre 8:00 AM y 10:00 PM
+        start_hour = session_data.start_time.hour
+        end_hour = session_data.end_time.hour
+        
+        if start_hour < 8 or end_hour > 22:
+            raise ValueError("Sessions can only be scheduled between 8:00 AM and 10:00 PM")
+        
+        # Validación 6: Verificar que no hay sesiones que crucen la medianoche
+        if session_data.start_time.date() != session_data.end_time.date():
+            raise ValueError("Sessions cannot span across midnight")
+        
+        # Validación 7: Verificar que hay tiempo suficiente entre sesiones (mínimo 15 minutos)
+        # Esta validación se hace en check_schedule_conflicts_with_buffer
+
+    def _check_schedule_conflicts_with_buffer(self, event_id: int, start_time: datetime, end_time: datetime, 
+                                            exclude_session_id: Optional[int] = None, buffer_minutes: int = 15) -> List[SessionModel]:
+        """Verificar conflictos de horario incluyendo un buffer entre sesiones"""
+        buffer_time = timedelta(minutes=buffer_minutes)
+        
+        # Obtener todas las sesiones del evento
+        all_sessions = self.session_repository.get_sessions_by_event(event_id, skip=0, limit=1000)
+        
+        conflicts = []
+        for session in all_sessions:
+            if exclude_session_id and session.id == exclude_session_id:
+                continue
+                
+            # Verificar si hay solapamiento incluyendo el buffer
+            session_start_with_buffer = session.start_time - buffer_time
+            session_end_with_buffer = session.end_time + buffer_time
+            
+            # Verificar si hay conflicto
+            if (start_time < session_end_with_buffer and end_time > session_start_with_buffer):
+                conflicts.append(session)
+        
+        return conflicts
+
     def create_session(self, session_data: SessionCreate) -> SessionSchema:
         # Validación 1: Verificar que el evento existe
         event = self.session_repository.get_event_by_id(session_data.event_id)
@@ -57,19 +114,18 @@ class SessionService:
             if not speaker:
                 raise ValueError(f"Speaker with id {session_data.speaker_id} does not exist")
         
-        # Validación 3: Verificar que el horario está dentro del rango del evento
-        if session_data.start_time < event.start_date or session_data.end_time > event.end_date:
-            raise ValueError("Session schedule must be within the event's date range")
+        # Validación 3: Validaciones adicionales de horarios
+        self._validate_session_schedule(session_data, event.start_date, event.end_date)
         
-        # Validación 4: Verificar que no hay conflictos de horario
-        conflicts = self.session_repository.check_schedule_conflicts(
+        # Validación 4: Verificar que no hay conflictos de horario con buffer
+        conflicts = self._check_schedule_conflicts_with_buffer(
             session_data.event_id, 
             session_data.start_time, 
             session_data.end_time
         )
         if conflicts:
             conflict_titles = [f"'{c.title}' ({c.start_time.strftime('%H:%M')}-{c.end_time.strftime('%H:%M')})" for c in conflicts]
-            raise ValueError(f"Schedule conflict with existing sessions: {', '.join(conflict_titles)}")
+            raise ValueError(f"Schedule conflict with existing sessions (including 15-minute buffer): {', '.join(conflict_titles)}")
         
         # Validación 5: Verificar capacidad positiva si se proporciona
         if session_data.capacity is not None and session_data.capacity <= 0:
@@ -104,12 +160,21 @@ class SessionService:
         start_time = update_data.get('start_time', existing_session.start_time)
         end_time = update_data.get('end_time', existing_session.end_time)
         
-        # Validación 3: Verificar que el horario está dentro del rango del evento
-        if start_time < event.start_date or end_time > event.end_date:
-            raise ValueError("Session schedule must be within the event's date range")
+        # Validación 3: Validaciones adicionales de horarios si se actualizan
+        if 'start_time' in update_data or 'end_time' in update_data:
+            # Crear un objeto temporal para validaciones
+            temp_session_data = SessionCreate(
+                title=existing_session.title,
+                event_id=existing_session.event_id,
+                start_time=start_time,
+                end_time=end_time,
+                speaker_id=session_data.speaker_id,
+                capacity=session_data.capacity
+            )
+            self._validate_session_schedule(temp_session_data, event.start_date, event.end_date)
         
-        # Validación 4: Verificar que no hay conflictos de horario
-        conflicts = self.session_repository.check_schedule_conflicts(
+        # Validación 4: Verificar que no hay conflictos de horario con buffer
+        conflicts = self._check_schedule_conflicts_with_buffer(
             existing_session.event_id, 
             start_time, 
             end_time,
@@ -117,7 +182,7 @@ class SessionService:
         )
         if conflicts:
             conflict_titles = [f"'{c.title}' ({c.start_time.strftime('%H:%M')}-{c.end_time.strftime('%H:%M')})" for c in conflicts]
-            raise ValueError(f"Schedule conflict with existing sessions: {', '.join(conflict_titles)}")
+            raise ValueError(f"Schedule conflict with existing sessions (including 15-minute buffer): {', '.join(conflict_titles)}")
         
         # Validación 5: Verificar capacidad positiva si se proporciona
         if session_data.capacity is not None and session_data.capacity <= 0:
