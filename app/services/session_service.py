@@ -115,7 +115,7 @@ class SessionService:
                 raise ValueError(f"Speaker with id {session_data.speaker_id} does not exist")
         
         # Validación 3: Validaciones adicionales de horarios
-        self._validate_session_schedule(session_data, event.start_date, event.end_date)
+        self._validate_session_schedule(session_data, event.start_date, event.end_date)#type: ignore
         
         # Validación 4: Verificar que no hay conflictos de horario con buffer
         conflicts = self._check_schedule_conflicts_with_buffer(
@@ -143,7 +143,7 @@ class SessionService:
             return None
         
         # Obtener el evento para validaciones
-        event = self.session_repository.get_event_by_id(existing_session.event_id)
+        event = self.session_repository.get_event_by_id(int(existing_session.event_id))
         if not event:
             raise ValueError(f"Event with id {existing_session.event_id} does not exist")
         
@@ -164,18 +164,18 @@ class SessionService:
         if 'start_time' in update_data or 'end_time' in update_data:
             # Crear un objeto temporal para validaciones
             temp_session_data = SessionCreate(
-                title=existing_session.title,
+                title=str(existing_session.title),
                 event_id=existing_session.event_id,
                 start_time=start_time,
                 end_time=end_time,
                 speaker_id=session_data.speaker_id,
                 capacity=session_data.capacity
             )
-            self._validate_session_schedule(temp_session_data, event.start_date, event.end_date)
+            self._validate_session_schedule(temp_session_data, event.start_date, event.end_date) #type: ignore
         
         # Validación 4: Verificar que no hay conflictos de horario con buffer
         conflicts = self._check_schedule_conflicts_with_buffer(
-            existing_session.event_id, 
+            int(existing_session.event_id), 
             start_time, 
             end_time,
             exclude_session_id=session_id
