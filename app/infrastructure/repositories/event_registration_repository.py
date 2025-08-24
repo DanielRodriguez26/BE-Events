@@ -50,7 +50,7 @@ class EventRegistrationRepository:
             )
             .first()
         )
-        
+
     def get_capacity_available(self, event_id: int):
         return (
             self.db.query(func.sum(EventRegistrationModel.number_of_participants))
@@ -58,3 +58,17 @@ class EventRegistrationRepository:
             .scalar()
             or 0
         )
+
+    def delete_registration(self, registration_id: int):
+        self.db.query(EventRegistrationModel).filter(EventRegistrationModel.id == registration_id).delete()
+        self.db.commit()
+        return True
+
+    def get_registration_by_id(self, registration_id: int):
+        return self.db.query(EventRegistrationModel).filter(EventRegistrationModel.id == registration_id).first()
+    
+    def get_event_capacity_info(self, event_id: int):
+        return self.db.query(EventRegistrationModel).filter(EventRegistrationModel.event_id == event_id).first()
+    
+    def get_event_by_id(self, event_id: int):
+        return self.db.query(EventRegistrationModel).filter(EventRegistrationModel.id == event_id).first()

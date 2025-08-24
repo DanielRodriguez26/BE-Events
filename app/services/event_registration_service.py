@@ -238,7 +238,7 @@ class EventRegistrationService:
 
         return EventRegistration.from_orm(registration)
 
-    def cancel_registration(self, registration_id: int, user_id: int) -> bool:
+    def cancel_registration(self, eventId: int, user_id: int) -> bool:
         """
         Cancela un registro de evento.
 
@@ -252,24 +252,14 @@ class EventRegistrationService:
         Raises:
             ValueError: Si el registro no existe o no pertenece al usuario
         """
-        registration = (
-            self.db.query(EventRegistrationModel)
-            .filter(
-                and_(
-                    EventRegistrationModel.id == registration_id,
-                    EventRegistrationModel.user_id == user_id,
-                )
-            )
-            .first()
-        )
+        registration = self.event_registration_repository.get_user_is_registered(user_id, eventId)
 
         if not registration:
             raise ValueError(
                 "Registro no encontrado o no tienes permisos para cancelarlo"
             )
 
-        self.db.delete(registration)
-        self.db.commit()
+        self.event_registration_repository.delete_registration(registration.id)
 
         return True
 
@@ -285,11 +275,7 @@ class EventRegistrationService:
         Returns:
             EventRegistration: El registro encontrado o None
         """
-        registration = (
-            self.db.query(EventRegistrationModel)
-            .filter(EventRegistrationModel.id == registration_id)
-            .first()
-        )
+        registration = self.event_registration_repository.get_registration_by_id(registration_id)
 
         if not registration:
             return None
@@ -306,17 +292,12 @@ class EventRegistrationService:
         Returns:
             dict: Información de capacidad
         """
-        event = self.db.query(Event).filter(Event.id == event_id).first()
+        event = self.event_registration_repository.get_event_by_id(event_id)
 
         if not event:
             raise ValueError("Evento no encontrado")
 
-        total_registrations = (
-            self.db.query(func.sum(EventRegistrationModel.number_of_participants))
-            .filter(EventRegistrationModel.event_id == event_id)
-            .scalar()
-            or 0
-        )
+        total_registrations = self.event_registration_repository.get_event_capacity_info(event_id)
 
         return {
             "event_id": event_id,
@@ -325,3 +306,23 @@ class EventRegistrationService:
             "available_capacity": event.capacity - total_registrations,
             "is_full": total_registrations >= event.capacity,
         }
+
+    def get_user_registration_for_event(
+        self, user_id: int, event_id: int
+    ) -> Optional[EventRegistration]:
+        """
+        Obtiene el registro de un usuario para un evento específico.
+
+        Args:
+            user_id: ID del usuario
+            event_id: ID del evento
+
+        Returns:
+            EventRegistration: El registro encontrado o None
+        """
+        registration = self.event_registration_repository.get_user_is_registered(user_id, event_id)
+
+        if not registration:
+            return None
+
+        return EventRegistration.from_orm(registration)

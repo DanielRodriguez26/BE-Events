@@ -180,3 +180,71 @@ async def get_event_capacity(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.delete("/{eventId}", summary="Cancel event registration")
+async def cancel_registration(
+    eventId: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Cancela un registro de evento.
+
+    **Requires:** Usuario autenticado (solo puede cancelar sus propios registros)
+
+    **Validations:**
+    - El registro debe existir
+    - El usuario debe ser el propietario del registro
+    - El evento no debe haber comenzado
+
+    - **eventId**: ID del registro a cancelar
+
+    Returns:
+    - message: Mensaje de confirmación
+    """
+    try:
+        registration_service = EventRegistrationService(db)
+        success = registration_service.cancel_registration(
+            eventId=eventId, 
+            user_id=int(current_user.id)
+        )
+        
+        if success:
+            return {"message": "Registro cancelado exitosamente"}
+        else:
+            raise HTTPException(status_code=400, detail="No se pudo cancelar el registro")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/check/{event_id}", summary="Check if user is registered to event")
+async def check_user_registration(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Verifica si el usuario está registrado a un evento específico.
+
+    **Requires:** Usuario autenticado
+
+    - **event_id**: ID del evento
+
+    Returns:
+    - registration: El registro si existe, None si no está registrado
+    """
+    try:
+        registration_service = EventRegistrationService(db)
+        registration = registration_service.get_user_registration_for_event(
+            user_id=int(current_user.id), 
+            event_id=event_id
+        )
+        return registration
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

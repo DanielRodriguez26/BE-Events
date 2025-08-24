@@ -165,7 +165,7 @@ class SessionService:
             # Crear un objeto temporal para validaciones
             temp_session_data = SessionCreate(
                 title=str(existing_session.title),
-                event_id=existing_session.event_id,
+                event_id=int(existing_session.event_id),
                 start_time=start_time,
                 end_time=end_time,
                 speaker_id=session_data.speaker_id,
