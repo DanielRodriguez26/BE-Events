@@ -134,7 +134,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Advanced Python",
             "description": "Advanced Python programming concepts",
@@ -146,6 +146,8 @@ class TestSessionCreateOperations:
         }
 
         response = client.post("/api/v1/sessions/", json=session_data)
+        print(f"Response status: {response.status_code}")
+        print(f"Response body: {response.json()}")
         assert response.status_code == 200
         data = response.json()
         assert data["title"] == "Advanced Python"
@@ -161,7 +163,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=30, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Open Discussion",
             "description": "Open discussion session",
@@ -184,7 +186,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Test Session",
             "description": "Test description",
@@ -207,7 +209,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Test Session",
             "description": "Test description",
@@ -230,7 +232,7 @@ class TestSessionCreateOperations:
         outside_time = sample_event.end_date + timedelta(days=1)
         start_time = outside_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Test Session",
             "description": "Test description",
@@ -261,7 +263,7 @@ class TestSessionCreateOperations:
         start_time = sample_session.start_time + timedelta(minutes=30)
         start_time = start_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Conflicting Session",
             "description": "This should conflict",
@@ -284,7 +286,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time - timedelta(hours=1)  # End before start
-        
+
         session_data = {
             "title": "Invalid Time Session",
             "description": "End time before start time",
@@ -306,7 +308,7 @@ class TestSessionCreateOperations:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Negative Capacity Session",
             "description": "Test negative capacity",
@@ -378,7 +380,7 @@ class TestSessionUpdateOperations:
         start_time = other_session.start_time + timedelta(minutes=30)
         start_time = start_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         update_data = {
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
@@ -431,7 +433,7 @@ class TestEventSessionEndpoints:
         future_time = datetime.now() + timedelta(days=1)
         start_time = future_time.replace(minute=0, second=0, microsecond=0)
         end_time = start_time + timedelta(hours=1)
-        
+
         session_data = {
             "title": "Event Session",
             "description": "Session created via event endpoint",
